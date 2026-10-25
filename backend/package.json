@@ -1,0 +1,30 @@
+{
+  "name": "solarious-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "scripts": {
+    "build": "node --check server.mjs && node --check db.mjs && node --check scripts/migrate-local-mongodb-to-atlas.mjs && node --check scripts/migrate-production-cms.mjs && node --check scripts/smoke-test.mjs",
+    "start": "node --env-file-if-exists=../.env.local --env-file-if-exists=.env server.mjs",
+    "test": "node --test services/*.test.mjs",
+    "test:smoke": "node --env-file-if-exists=.env scripts/smoke-test.mjs",
+    "migrate:d1": "node scripts/import-d1-export.mjs",
+    "migrate:mongo:plan": "node scripts/migrate-local-mongodb-to-atlas.mjs",
+    "migrate:mongo": "node scripts/migrate-local-mongodb-to-atlas.mjs --execute",
+    "migrate:cms:plan": "node --env-file-if-exists=.env scripts/migrate-production-cms.mjs",
+    "migrate:cms": "node --env-file-if-exists=.env scripts/migrate-production-cms.mjs --execute"
+  },
+  "dependencies": {
+    "cloudinary": "^2.11.0",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "mongoose": "^9.1.5",
+    "multer": "^2.4.0",
+    "sharp": "^0.35.5"
+  }
+}

@@ -1,0 +1,5 @@
+import "server-only";
+import { backendApiUrl } from "@/lib/server-config";
+export type SiteEvent={id:string;slug:string;title:string;short_description:string;description:string;category:string;event_date:string;start_time:string;end_time:string;timezone:string;venue:string;address:string;maps_url:string;registration_url:string;cover_url:string;gallery:{url:string}[];status:string;featured:boolean};
+export async function getEvents(){const backend=backendApiUrl();if(!backend)return[] as SiteEvent[];try{const response=await fetch(`${backend}/api/events`,{cache:"no-store"});const data=await response.json() as {events?:SiteEvent[]};return response.ok?data.events||[]:[]}catch{return[]}}
+export async function getEvent(slug:string){const backend=backendApiUrl();if(!backend)return null;try{const response=await fetch(`${backend}/api/events/${encodeURIComponent(slug)}`,{cache:"no-store"});const data=await response.json() as {event?:SiteEvent};return response.ok?data.event||null:null}catch{return null}}

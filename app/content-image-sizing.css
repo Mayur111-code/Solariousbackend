@@ -1,0 +1,103 @@
+/* Desktop-only sizing for oversized content media. Heroes, lightboxes, logos and icons are intentionally excluded. */
+.home-header:not(.scrolled) .brand,
+.home-header:not(.scrolled) .brand img {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (min-width: 901px) {
+  .premium-inner-hero.with-image {
+    grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
+  }
+
+  .premium-inner-image {
+    min-height: 240px;
+    max-height: 320px;
+    align-self: center;
+    margin: 0;
+  }
+
+  .premium-product-panel,
+  .technology-panel {
+    grid-template-columns: minmax(420px, 0.85fr) minmax(0, 1.15fr);
+  }
+
+  .premium-product-panel > *,
+  .technology-panel > * {
+    min-width: 0;
+  }
+
+  .premium-product-copy h3,
+  .technology-panel-copy h2 {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    line-height: 0.94;
+    text-wrap: balance;
+  }
+
+  .premium-product-visual,
+  .technology-panel-image {
+    min-height: 340px;
+  }
+
+  .premium-product-visual img,
+  .product-image img,
+  .product-detail-image img {
+    object-fit: contain;
+  }
+
+  .premium-manufacturing {
+    grid-template-columns: minmax(320px, 0.65fr) minmax(0, 1.35fr);
+    min-height: 580px;
+  }
+
+  .premium-manufacturing-image {
+    min-height: 440px;
+  }
+
+  .manufacturing-editorial-image {
+    width: 60%;
+    height: min(40vw, 420px);
+    min-height: 320px;
+    margin-inline: auto;
+  }
+
+  .events-featured {
+    grid-template-columns: minmax(280px, 0.62fr) minmax(0, 1.38fr);
+  }
+
+  .events-featured > img {
+    max-height: 320px;
+  }
+
+  .event-card > img {
+    height: 165px;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1050px) {
+  .premium-product-panel,
+  .technology-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.manufacturing-process-grid article img,
+.about-timeline article img {
+  display: block;
+  width: 60%;
+  max-width: 100%;
+  height: auto;
+  margin: 16px auto 0;
+  object-fit: cover;
+}
+
+@media (max-width: 900px) {
+  .manufacturing-process-grid article img,
+  .about-timeline article img {
+    width: min(76%, 320px);
+  }
+}

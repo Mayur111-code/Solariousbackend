@@ -1,0 +1,5 @@
+"use client";
+import Link from "next/link";
+import { ArrowRight, FileDown } from "lucide-react";
+import type { Product } from "@/data/site";
+export default function ProductCard({product}:{product:Product}){return <article className="product-card"><div className="product-image"><img src={product.image||"/utility-solar.webp"} alt={`${product.name} solar modules`} loading="lazy" decoding="async" onError={event=>{event.currentTarget.src="/utility-solar.webp"}}/></div><div className="product-body"><span>{product.technology}</span><h2>{product.name} Modules</h2><p>{product.summary}</p><dl><div><dt>Efficiency</dt><dd>Confirm with technical team</dd></div><div><dt>Power range</dt><dd>Configurable</dd></div><div><dt>Applications</dt><dd>{product.applications.join(', ')}</dd></div></dl><ul>{product.features.map(x=><li key={x}>{x}</li>)}</ul><div className="product-actions"><Link href={`/products/${product.slug}`}>View details <ArrowRight size={15}/></Link><Link href="/about#company-documents"><FileDown size={15}/> Datasheet</Link><Link href={`/quote?product=${product.slug}`}>Request quote</Link></div></div></article>}

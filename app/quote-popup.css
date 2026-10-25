@@ -1,0 +1,189 @@
+[data-slot="dialog-overlay"]:has(+ .quote-popup-dialog) {
+  z-index: 12000 !important;
+  background: rgba(5, 17, 30, 0.76) !important;
+  backdrop-filter: blur(8px);
+}
+
+.quote-popup-dialog {
+  z-index: 12001 !important;
+  display: grid !important;
+  grid-template-columns: minmax(250px, 0.78fr) minmax(420px, 1.22fr);
+  gap: 0 !important;
+  width: min(920px, calc(100vw - 32px)) !important;
+  max-width: 920px !important;
+  max-height: min(92vh, 760px);
+  overflow: hidden;
+  padding: 0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  border-radius: 22px !important;
+  background: #fff !important;
+  color: #172b3a;
+  box-shadow: 0 35px 110px rgba(2, 12, 25, 0.38) !important;
+}
+
+.quote-popup-dialog > button[data-slot="dialog-close"] {
+  z-index: 4;
+  top: 18px !important;
+  right: 18px !important;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  background: #fff;
+  color: #64748b;
+  opacity: 1;
+}
+
+.quote-popup-visual {
+  position: relative;
+  min-height: 640px;
+  overflow: hidden;
+  background: #142536;
+}
+
+.quote-popup-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 37, 54, 0.08), rgba(20, 37, 54, 0.92));
+}
+
+.quote-popup-visual > img {
+  object-fit: cover;
+}
+
+.quote-popup-visual > div {
+  position: absolute;
+  z-index: 1;
+  right: 28px;
+  bottom: 30px;
+  left: 28px;
+  color: #fff;
+}
+
+.quote-popup-visual > div img {
+  width: 190px;
+  height: auto;
+  padding: 6px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.quote-popup-visual p {
+  max-width: 240px;
+  margin: 18px 0 0;
+  color: #dce8f0;
+  font-family: Georgia, serif;
+  font-size: 1.35rem;
+}
+
+.quote-popup-content {
+  overflow-y: auto;
+  padding: 42px 44px 28px;
+}
+
+.quote-popup-content [data-slot="dialog-header"] {
+  padding-right: 30px;
+}
+
+.quote-popup-content [data-slot="dialog-title"] {
+  color: #172b3a;
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.quote-popup-content [data-slot="dialog-description"] {
+  max-width: 480px;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+.quote-popup-form {
+  margin-top: 22px;
+}
+
+.quote-popup-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.quote-popup-fields label {
+  display: grid;
+  gap: 7px;
+  color: #334155;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.quote-popup-fields label > span {
+  color: #dc2626;
+}
+
+.quote-popup-fields small {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.quote-popup-fields input,
+.quote-popup-fields select,
+.quote-popup-fields textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 12px;
+  border: 1px solid #d7e0e9;
+  border-radius: 9px;
+  background: #fbfdff;
+  color: #172b3a;
+  font: inherit;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.quote-popup-fields input:focus,
+.quote-popup-fields select:focus,
+.quote-popup-fields textarea:focus {
+  border-color: #1673b8;
+  box-shadow: 0 0 0 3px rgba(22, 115, 184, 0.12);
+}
+
+.quote-popup-message {
+  grid-column: 1 / -1;
+}
+
+.quote-popup-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 17px;
+  border: 0;
+  border-radius: 9px;
+  background: #142536;
+  color: #fff;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.quote-popup-submit:hover { background: #1673b8; }
+.quote-popup-submit:disabled { cursor: wait; opacity: 0.7; }
+.quote-popup-error { margin: 14px 0 0; padding: 10px 12px; border-radius: 8px; background: #fff1f2; color: #b91c1c; font-size: 0.82rem; }
+.quote-popup-consent { margin: 12px 0 0; color: #94a3b8; font-size: 0.7rem; text-align: center; }
+.quote-popup-success { display: grid; min-height: 400px; place-content: center; justify-items: center; text-align: center; }
+.quote-popup-success svg { width: 52px; height: 52px; color: #15803d; }
+.quote-popup-success h3 { margin: 18px 0 8px; font-family: Georgia, serif; font-size: 1.8rem; }
+.quote-popup-success p { max-width: 390px; color: #64748b; }
+.quote-popup-success button { margin-top: 12px; border: 0; background: transparent; color: #1673b8; font-weight: 800; cursor: pointer; }
+
+@media (max-width: 720px) {
+  .quote-popup-dialog { grid-template-columns: 1fr; max-height: calc(100dvh - 20px); }
+  .quote-popup-visual { display: none; }
+  .quote-popup-content { padding: 42px 20px 24px; }
+  .quote-popup-fields { grid-template-columns: 1fr; }
+  .quote-popup-message { grid-column: auto; }
+}

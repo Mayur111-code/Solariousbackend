@@ -1,0 +1,2 @@
+/* Cloud-hosted content is rendered directly so a dynamic Cloudinary URL cannot be blocked by Next image-host allowlists. */
+.hero-slide img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}

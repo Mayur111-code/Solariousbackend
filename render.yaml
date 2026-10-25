@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: solarious-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.5
+      - key: NODE_ENV
+        value: production
+      - key: LOCAL_UPLOADS_ENABLED
+        value: "false"
+      - key: DB_NAME
+        value: solarious
+      - key: MONGODB_URI
+        sync: True
+      - key: FRONTEND_ORIGINS
+        sync: false
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: APINEX_API_KEY
+        sync: false
+      - key: APINEX_BASE_URL
+        value: https://api.apinex.bond/v1
+      - key: APINEX_MODEL
+        value: free/mimo-v2.6-pro
+      - key: IMAGE_PROVIDER
+        value: stability
+      - key: IMAGE_API_KEY
+        sync: false
+      - key: IMAGE_MODEL
+        value: core
+      - key: CRON_SECRET
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: EMAIL_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
