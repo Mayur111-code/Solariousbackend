@@ -5,7 +5,7 @@ import { ArrowRight, ArrowUpRight, CalendarDays, Factory, Leaf, ShieldCheck, Spa
 import AiSolarSection from "@/components/ai-solar-section";
 import HeroSlider from "@/components/hero-slider";
 import PremiumProductShowcase from "@/components/premium-product-showcase";
-import TechnologyTabs from "@/components/technology-tabs";
+import WhatsAppLink from "@/components/whatsapp-contact";
 import { getCompanyCms } from "@/lib/site-cms";
 import { getEvents } from "@/lib/events";
 import { getGallery } from "@/lib/gallery";
@@ -42,19 +42,25 @@ export default async function Home() {
       <div className="premium-intro-copy"><p>{company.description}</p><p>We bring product technology, manufacturing discipline and responsive technical support together for commercial, industrial and utility-scale solar applications.</p><Link className="premium-text-link" href="/about">Discover Solarious <ArrowRight size={16} /></Link></div>
     </section>
 
-    <section className="premium-products premium-section" aria-labelledby="product-portfolio">
-      <div className="premium-heading-row"><div><p className="premium-kicker">Module portfolio</p><h2 id="product-portfolio">Technology for every <em>solar ambition.</em></h2></div><p>Explore Solarious module categories using approved product information. Confirm final power, efficiency and warranty values with our technical team.</p></div>
+    {/* One consolidated technology experience. The previous second tab panel
+        repeated the same product summaries and features on the homepage. */}
+    <section className="premium-products premium-section" aria-labelledby="technology-experience-heading">
+      <div className="premium-heading-row">
+        <div>
+          <p className="premium-kicker">Solar technology experience</p>
+          <h2 id="technology-experience-heading">Purpose-built technologies.<br /><em>Clearly explained.</em></h2>
+        </div>
+        <div className="premium-heading-aside">
+          <p>Explore Solarious module categories using approved product information. Confirm final power, efficiency and warranty values with our technical team.</p>
+          <Link className="premium-text-link" href="/about#company-documents">Relevant documents <ArrowRight size={16} /></Link>
+        </div>
+      </div>
       <PremiumProductShowcase products={products} />
     </section>
 
     <section className="premium-manufacturing" aria-labelledby="manufacturing-showcase">
       <div className="premium-manufacturing-image"><Image src="/manufacturing-line.webp" alt="Solarious solar module manufacturing line" fill sizes="(max-width: 1050px) 100vw, 36vw" /></div>
       <div className="premium-manufacturing-copy"><p className="premium-kicker">Advanced manufacturing</p><h2 id="manufacturing-showcase">Precision Manufacturing.<br /><em>Powering Tomorrow.</em></h2><p>A disciplined production line built around process control, automation, testing and traceability.</p><div className="manufacturing-features"><span><Factory size={19} /><strong>Controlled production</strong><small>Structured material flow and repeatable assembly.</small></span><span><ShieldCheck size={19} /><strong>Quality checkpoints</strong><small>Inspection, EL imaging and flash testing.</small></span></div><Link className="premium-button light" href="/manufacturing">Explore manufacturing <ArrowUpRight size={16} /></Link></div>
-    </section>
-
-    <section className="premium-technology premium-section" aria-labelledby="technology-experience-heading">
-      <div className="premium-heading-row"><div><p className="premium-kicker">Solar technology experience</p><h2 id="technology-experience-heading">Purpose-built technologies.<br /><em>Clearly explained.</em></h2></div><Link className="premium-text-link" href="/products">Explore products <ArrowRight size={16} /></Link></div>
-      <TechnologyTabs products={products} compact />
     </section>
 
     <section className="premium-why premium-section" aria-labelledby="why-solarious">
@@ -75,8 +81,21 @@ export default async function Home() {
     </section>
 
     <section className="premium-contact-cta" aria-labelledby="contact-cta-heading">
-      <div><p className="premium-kicker">Start your solar project</p><h2 id="contact-cta-heading">Let&apos;s build a cleaner energy future.</h2><p>Share your application, capacity and timeline for project-focused guidance from the Solarious team.</p></div>
-      <div><LeadFormModal label="Get a quote" className="premium-button"/><Link className="premium-button secondary" href="/contact">Contact our team</Link></div>
+      <div>
+        <p className="premium-kicker">Get a quote · Start your solar project</p>
+        <h2 id="contact-cta-heading">Let&apos;s build a cleaner energy future.</h2>
+        <p>Share your application, capacity and timeline for project-focused guidance from the Solarious team.</p>
+      </div>
+      <div className="premium-cta-actions">
+        <div className="premium-cta-buttons">
+          <LeadFormModal label="Get a quote" className="premium-button" />
+          <Link className="premium-button secondary" href="/quote">Full quote form <ArrowRight size={16} /></Link>
+        </div>
+        <div className="premium-cta-links">
+          <Link href="/contact">Contact our team</Link>
+          <WhatsAppLink className="premium-whatsapp-link">Chat on WhatsApp</WhatsAppLink>
+        </div>
+      </div>
     </section>
   </main>;
 }

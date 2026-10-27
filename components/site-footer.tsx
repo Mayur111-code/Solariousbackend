@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, Mail, MessageCircle } from "lucide-react";
+import { Globe, Mail } from "lucide-react";
 import type { CompanyCms } from "@/lib/site-cms";
+import WhatsAppLink from "@/components/whatsapp-contact";
 
 const groups = [
   {
@@ -53,7 +54,6 @@ export default function SiteFooter({
   logoUrl?: string;
   company: CompanyCms;
 }) {
-  const whatsapp = company.whatsapp.replace(/\D/g, "");
   const socialLinks = Object.entries(company.social).filter((entry): entry is [string, string] => Boolean(entry[1]));
   return (
     <footer className="site-footer">
@@ -88,14 +88,11 @@ export default function SiteFooter({
           >
             <Globe size={17} />
           </a>
-          {whatsapp && <a
-            href={`https://wa.me/${whatsapp}?text=Hello%20Solarious%20Energy%2C%20I%20would%20like%20to%20discuss%20a%20solar%20requirement.`}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Contact Solarious Energy on WhatsApp"
-          >
-            <MessageCircle size={17} />
-          </a>}
+          <WhatsAppLink
+            className="footer-whatsapp"
+            iconOnly
+            ariaLabel="Chat with Solarious on WhatsApp"
+          />
           {socialLinks.map(([network,href])=><a key={network} href={href} target="_blank" rel="noreferrer" aria-label={`Visit Solarious Energy on ${network}`}>
             {network==="linkedin"?<LinkedInIcon/>:<Globe size={17}/>}
           </a>)}

@@ -1,3 +1,133 @@
 "use client";
-import Image from "next/image";import Link from "next/link";import {useEffect,useState} from "react";import {ArrowRight,CalendarDays} from "lucide-react";import type {HeroBanner} from "@/lib/hero-banners";
-export default function HeroSlider({banners}:{banners:HeroBanner[]}){const [active,setActive]=useState(0);useEffect(()=>{if(banners.length<2||window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;const timer=window.setInterval(()=>setActive(v=>(v+1)%banners.length),10000);return()=>window.clearInterval(timer)},[banners.length]);const current=banners[active]??banners[0];if(!current)return null;return <section className="hero-slider" aria-roledescription="carousel" aria-label="Solarious Energy highlights"><div className="hero-slides">{banners.map((banner,index)=><div className={`hero-slide ${index===active?"active":""}`} aria-hidden={index!==active} key={banner.id}><Image src={banner.image_url||"/hero-solar-1.webp"} alt={index===active?banner.alt_text:""} fill sizes="100vw" priority={index===0} onError={event=>{event.currentTarget.src="/hero-solar-1.webp"}}/></div>)}</div><div className="hero-shade"/><div className="hero-slider-content"><p className="eyebrow hero-eyebrow"><span/> Advanced solar module manufacturing</p><h1 key={`h-${current.id}`}>{current.headline}</h1><p className="hero-slider-lede" key={`p-${current.id}`}>{current.supporting_text}</p><div className="hero-actions"><Link className="button" href={current.cta_href}>{current.cta_label}<ArrowRight size={18}/></Link><Link className="button hero-outline" href="/quote">Get a Quote</Link></div><Link className="ai-indicator hero-ai hero-events-cta" href="/events"><CalendarDays size={16}/><span><strong>Events &amp; Activities</strong><small>Explore our latest events, exhibitions &amp; activities</small></span><ArrowRight size={15}/></Link></div><div className="hero-dots" role="group" aria-label="Choose slide">{banners.map((banner,index)=><button key={banner.id} className={index===active?"active":""} onClick={()=>setActive(index)} aria-label={`Show slide ${index+1}: ${banner.headline}`} aria-current={index===active?"true":undefined}/>)}</div></section>}
+
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, CalendarDays } from "lucide-react";
+import type { HeroBanner } from "@/lib/hero-banners";
+
+type TouchOrigin = { x: number; y: number };
+
+/**
+ * Homepage hero carousel. Autoplay is deliberately slow, pauses on hover,
+ * focus and hidden tabs, and never starts for reduced-motion visitors.
+ */
+export default function HeroSlider({ banners }: { banners: HeroBanner[] }) {
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const touchOrigin = useRef<TouchOrigin | null>(null);
+
+  useEffect(() => {
+    if (banners.length < 2 || paused) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        setActive((value) => (value + 1) % banners.length);
+      }
+    }, 10_000);
+    return () => window.clearInterval(timer);
+  }, [banners.length, paused]);
+
+  const current = banners[active] ?? banners[0];
+  if (!current) return null;
+
+  const goTo = (index: number) => {
+    setActive((index + banners.length) % banners.length);
+  };
+
+  return (
+    <section
+      className="hero-slider"
+      aria-roledescription="carousel"
+      aria-label="Solarious Energy highlights"
+      tabIndex={0}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setPaused(false);
+        }
+      }}
+      onTouchStart={(event) => {
+        const touch = event.changedTouches[0];
+        touchOrigin.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+      }}
+      onTouchEnd={(event) => {
+        const origin = touchOrigin.current;
+        const touch = event.changedTouches[0];
+        touchOrigin.current = null;
+        if (!origin || !touch || banners.length < 2) return;
+        const deltaX = touch.clientX - origin.x;
+        const deltaY = touch.clientY - origin.y;
+        if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+          goTo(active + (deltaX < 0 ? 1 : -1));
+        }
+      }}
+      onKeyDown={(event) => {
+        if (banners.length < 2) return;
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          goTo(active + 1);
+        }
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          goTo(active - 1);
+        }
+      }}
+    >
+      <div className="hero-slides" aria-live="off">
+        {banners.map((banner, index) => (
+          <div
+            className={`hero-slide ${index === active ? "active" : ""}`}
+            aria-hidden={index !== active}
+            aria-label={`${index + 1} of ${banners.length}`}
+            id={`hero-slide-${banner.id}`}
+            key={banner.id}
+          >
+            <Image
+              src={banner.image_url || "/hero-solar-1.webp"}
+              alt={index === active ? banner.alt_text : ""}
+              fill
+              sizes="100vw"
+              priority={index === 0}
+              onError={(event) => {
+                event.currentTarget.src = "/hero-solar-1.webp";
+              }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="hero-shade" />
+      <div className="hero-slider-content">
+        <p className="eyebrow hero-eyebrow"><span /> Advanced solar module manufacturing</p>
+        <h1 key={`h-${current.id}`}>{current.headline}</h1>
+        <p className="hero-slider-lede" key={`p-${current.id}`}>{current.supporting_text}</p>
+        <div className="hero-actions">
+          <Link className="button" href={current.cta_href}>{current.cta_label}<ArrowRight size={18} /></Link>
+          <Link className="button hero-outline" href="/quote">Get a Quote</Link>
+        </div>
+        <Link className="ai-indicator hero-ai hero-events-cta" href="/events">
+          <CalendarDays size={16} />
+          <span><strong>Events &amp; Activities</strong><small>Explore our latest events, exhibitions &amp; activities</small></span>
+          <ArrowRight size={15} />
+        </Link>
+      </div>
+      {banners.length > 1 && (
+        <div className="hero-dots" role="group" aria-label="Choose slide">
+          {banners.map((banner, index) => (
+            <button
+              key={banner.id}
+              className={index === active ? "active" : ""}
+              onClick={() => goTo(index)}
+              aria-label={`Show slide ${index + 1}: ${banner.headline}`}
+              aria-controls={`hero-slide-${banner.id}`}
+              aria-current={index === active ? "true" : undefined}
+              type="button"
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}

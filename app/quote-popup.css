@@ -119,7 +119,7 @@
   font-weight: 800;
 }
 
-.quote-popup-fields label > span {
+.quote-popup-fields .required-mark {
   color: #dc2626;
 }
 

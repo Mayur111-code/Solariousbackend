@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 import { adminFetch } from "@/lib/admin-fetch";
 import { apiError } from "@/lib/api-error";
 import DocumentPreviewModal, {
@@ -8,7 +9,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   Eye,
+  FileCheck2,
+  FileImage,
   FilePlus2,
+  FileText,
   Loader2,
   Pencil,
   RotateCcw,
@@ -48,6 +52,56 @@ type Upload = {
 type PreviewUpload = { url: string; storageId: string };
 const documentTypes:Record<string,string>={pdf:"application/pdf",png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",webp:"image/webp",doc:"application/msword",docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",xls:"application/vnd.ms-excel",xlsx:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"};
 const documentType=(file:File)=>file.type||documentTypes[file.name.split(".").pop()?.toLowerCase()||""]||"";
+
+const resourceTypeLabel = (item: Resource) => {
+  const type = (item.file_type || "").toLowerCase();
+  if (type === "application/pdf") return "PDF";
+  if (type.startsWith("image/")) return type.split("/")[1]?.toUpperCase() || "Image";
+  if (type.includes("wordprocessingml") || type === "application/msword") return "DOC";
+  if (type.includes("spreadsheetml") || type === "application/vnd.ms-excel") return "XLS";
+  const extension = item.file_name?.split(".").pop()?.toUpperCase();
+  return extension && extension.length <= 5 ? extension : "File";
+};
+const resourceIssueDate = (value?: string) => {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? "" : new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).format(date);
+};
+
+function ResourceIcon({ item }: { item: Resource }) {
+  const type = (item.file_type || "").toLowerCase();
+  const common = { size: 22, strokeWidth: 1.6, "aria-hidden": true } as const;
+  if (type === "application/pdf") return <FileText {...common} />;
+  if (type.startsWith("image/")) return <FileImage {...common} />;
+  if ((item.category || "").toLowerCase().includes("certificate")) return <FileCheck2 {...common} />;
+  return <FileText {...common} />;
+}
+
+function ResourceThumbnail({ item }: { item: Resource }) {
+  const [failed, setFailed] = useState(false);
+  const isImage = (item.file_type || "").toLowerCase().startsWith("image/");
+  const src = failed ? "" : item.previewImageUrl?.trim() || item.logoUrl?.trim() || (isImage ? `/api/admin/resources/${item.id}/file` : "");
+  return (
+    <span className="admin-resource-thumb" aria-hidden="true">
+      {src ? <img src={src} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} /> : <ResourceIcon item={item} />}
+      <small>{resourceTypeLabel(item)}</small>
+    </span>
+  );
+}
+
+function ThumbnailPreview({ src, title }: { src: string; title: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className={`admin-thumb-preview ${!src || failed ? "is-empty" : ""}`}>
+      {src && !failed ? (
+        <img src={src} alt={`Thumbnail preview for ${title}`} onError={() => setFailed(true)} />
+      ) : (
+        <><FileImage size={22} aria-hidden="true" /><small>No thumbnail</small></>
+      )}
+    </span>
+  );
+}
+
 function streamUpload(
   file: File,
   onProgress: (value: number) => void,
@@ -109,6 +163,7 @@ export default function AdminResources() {
     [preview, setPreview] = useState<DocumentPreview | null>(null),
     [localPreviewUrl, setLocalPreviewUrl] = useState(""),
     [localPreviewFile, setLocalPreviewFile] = useState<File | null>(null),
+    [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState(""),
     [retryForm, setRetryForm] = useState<HTMLFormElement | null>(null);
   const request = useRef<XMLHttpRequest | null>(null);
   const load = useCallback(
@@ -128,11 +183,21 @@ export default function AdminResources() {
   useEffect(() => () => {
     if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
   }, [localPreviewUrl]);
+  useEffect(() => () => {
+    if (thumbnailPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(thumbnailPreviewUrl);
+  }, [thumbnailPreviewUrl]);
   const closePreview = useCallback(() => setPreview(null), []);
+  const chooseThumbnail = (file?: File) => {
+    setThumbnailPreviewUrl((current) => {
+      if (current.startsWith("blob:")) URL.revokeObjectURL(current);
+      return file?.size ? URL.createObjectURL(file) : "";
+    });
+  };
   const closeEditor = () => {
     setEditing(undefined);
     setLocalPreviewFile(null);
     setLocalPreviewUrl("");
+    chooseThumbnail(undefined);
   };
   const chooseDocument = (file?: File) => {
     setLocalPreviewFile(file?.size ? file : null);
@@ -154,6 +219,11 @@ export default function AdminResources() {
       ),
     [items, query],
   );
+  const editorThumbnailSrc =
+    thumbnailPreviewUrl ||
+    editing?.previewImageUrl?.trim() ||
+    editing?.logoUrl?.trim() ||
+    "";
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -255,7 +325,7 @@ export default function AdminResources() {
           <h2>Documents &amp; Certifications</h2>
           <p>Upload, preview, order and publish documents on the About Us page.</p>
         </div>
-        <button className="button" onClick={() => { chooseDocument(undefined); setEditing(null); }}>
+        <button className="button" onClick={() => { chooseDocument(undefined); chooseThumbnail(undefined); setEditing(null); }}>
           <FilePlus2 size={16} /> Add document
         </button>
       </div>
@@ -278,12 +348,14 @@ export default function AdminResources() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search resources"
+          aria-label="Search resources"
         />
       </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
+              <th>Preview</th>
               <th>Document</th>
               <th>Category</th>
               <th>File</th>
@@ -293,58 +365,78 @@ export default function AdminResources() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((x) => (
-              <tr key={x.id}>
-                <td>
-                  <strong>{x.title}</strong>
-                  <small>{x.description}</small>
-                </td>
-                <td>
-                  {x.category}
-                  <small>{x.product}</small>
-                </td>
-                <td>
-                  <button className="admin-file-preview" type="button" onClick={() => previewResource(x)}>
-                    {x.file_name}
-                  </button>
-                  <small>{(x.file_size / 1024 / 1024).toFixed(1)} MB</small>
-                </td>
-                <td>{x.display_order}</td>
-                <td>
-                  <button
-                    className={`publish-toggle ${x.published ? "on" : ""}`}
-                    onClick={() => void toggle(x)}
-                  >
-                    {x.published ? "Published" : "Draft"}
-                  </button>
-                </td>
-                <td>
-                  <div className="table-actions">
+            {filtered.map((x) => {
+              const issueDate = resourceIssueDate(x.issueDate);
+              return (
+                <tr key={x.id}>
+                  <td className="admin-resource-thumb-cell">
                     <button
-                      className="icon-button"
-                      onClick={() => { chooseDocument(undefined); setEditing(x); }}
-                      aria-label="Edit"
+                      className="admin-resource-thumb-button"
+                      type="button"
+                      onClick={() => previewResource(x)}
+                      aria-label={`Preview ${x.title}`}
+                      title={`Preview ${x.title}`}
                     >
-                      <Pencil size={15} />
+                      <ResourceThumbnail key={`${x.id}-${x.previewImageUrl || x.logoUrl || ""}`} item={x} />
                     </button>
-                    <a
-                      className="icon-button"
-                      href={`/api/admin/resources/${x.id}/file?download=1`}
-                      aria-label="Download"
-                    >
-                      <Download size={15} />
-                    </a>
+                  </td>
+                  <td>
+                    <strong>{x.title}</strong>
+                    <small>{x.description || "No description"}</small>
+                    {issueDate && <small>Issued {issueDate}</small>}
+                  </td>
+                  <td>
+                    {x.category}
+                    <small>{x.product || "—"}</small>
+                  </td>
+                  <td>
+                    <button className="admin-file-preview" type="button" onClick={() => previewResource(x)}>
+                      {x.file_name}
+                    </button>
+                    <small>{resourceTypeLabel(x)} · {(x.file_size / 1024 / 1024).toFixed(1)} MB</small>
+                  </td>
+                  <td>{x.display_order}</td>
+                  <td>
                     <button
-                      className="icon-button danger"
-                      onClick={() => void remove(x)}
-                      aria-label="Delete"
+                      className={`publish-toggle ${x.published ? "on" : ""}`}
+                      onClick={() => void toggle(x)}
+                      aria-label={`${x.published ? "Unpublish" : "Publish"} ${x.title}`}
                     >
-                      <Trash2 size={15} />
+                      {x.published ? "Published" : "Draft"}
                     </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                    <small className="admin-visibility-note">
+                      {x.published ? "Visible on About Us" : "Hidden from public site"}
+                    </small>
+                  </td>
+                  <td>
+                    <div className="table-actions">
+                      <button
+                        className="icon-button"
+                        onClick={() => { chooseDocument(undefined); chooseThumbnail(undefined); setEditing(x); }}
+                        aria-label={`Edit ${x.title}`}
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <a
+                        className="icon-button"
+                        href={`/api/admin/resources/${x.id}/file?download=1`}
+                        download={x.file_name}
+                        aria-label={`Download ${x.title}`}
+                      >
+                        <Download size={15} />
+                      </a>
+                      <button
+                        className="icon-button danger"
+                        onClick={() => void remove(x)}
+                        aria-label={`Delete ${x.title}`}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {!filtered.length && (
@@ -361,6 +453,7 @@ export default function AdminResources() {
             onMouseDown={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
+            aria-labelledby="resource-editor-title"
           >
             <button
               className="modal-close"
@@ -370,7 +463,7 @@ export default function AdminResources() {
             >
               <X />
             </button>
-            <h2>{editing ? "Edit resource" : "Add resource"}</h2>
+            <h2 id="resource-editor-title">{editing ? "Edit resource" : "Add resource"}</h2>
             <form onSubmit={save}>
               <label>
                 Title *
@@ -405,6 +498,20 @@ export default function AdminResources() {
                   placeholder="Optional"
                 />
               </label>
+              <div className="admin-resource-thumbnail-editor">
+                <ThumbnailPreview
+                  key={editorThumbnailSrc || "no-thumbnail"}
+                  src={editorThumbnailSrc}
+                  title={editing?.title || "new document"}
+                />
+                <div>
+                  <strong>Public card thumbnail</strong>
+                  <p>
+                    The current or newly selected image appears at the top of the
+                    public document card. Without one, a file-type preview is used.
+                  </p>
+                </div>
+              </div>
               <div className="admin-form-grid">
                 <label>Issuing organization<input name="issuingOrganization" defaultValue={editing?.issuingOrganization} /></label>
                 <label>Certificate number<input name="certificateNumber" defaultValue={editing?.certificateNumber} /></label>
@@ -412,7 +519,7 @@ export default function AdminResources() {
                 <label>Expiry date<input name="expiryDate" type="date" defaultValue={editing?.expiryDate?.slice(0,10)} /></label>
                 <label>Certificate logo URL<input name="logoUrl" type="url" defaultValue={editing?.logoUrl} /></label>
                 <label>Preview image URL<input name="previewImageUrl" type="url" defaultValue={editing?.previewImageUrl} /></label>
-                <label>Upload thumbnail<input name="previewImage" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+                <label>Upload thumbnail<input name="previewImage" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => chooseThumbnail(event.currentTarget.files?.[0])} /></label>
                 <label>Verification URL<input name="verificationUrl" type="url" defaultValue={editing?.verificationUrl} /></label>
               </div>
               <label>

@@ -15,7 +15,8 @@ import {aiConfiguration,generateAIText,generateMarketingContent} from "./service
 import {generateMarketingImage,imageConfiguration} from "./services/image-generation.mjs";
 import {assistantFallback,detectLanguage,solarEstimate} from "./services/solar-assistant.mjs";
 import {validateImageBuffer} from "./services/image-validation.mjs";
-import {cloudinary,configureCloudinary,createSignedImageUpload,createSignedRawDownload,createSignedRawUpload,verifyCloudinaryCredentials} from "./services/cloudinary.mjs";
+import {cloudinary,configureCloudinary,createSignedImageUpload,createSignedRawUpload,verifyCloudinaryCredentials} from "./services/cloudinary.mjs";
+import {deliverLocalResourceFile,inlinePreviewable,resolveResourceSource} from "./services/resource-delivery.mjs";
 import {buildEnquiryReport,emailConfiguration,sendTransactionalEmail} from "./services/enquiry-report.mjs";
 import {publicSiteSettingKeys,sanitizeSiteSetting} from "./services/site-settings.mjs";
 
@@ -164,17 +165,19 @@ app.post("/api/admin/resources",admin,asyncRoute(async(req,res)=>{
 app.patch("/api/admin/resources",admin,asyncRoute(async(req,res)=>{const item=await Resource.findByIdAndUpdate(req.body.id,{published:Boolean(req.body.published)},{new:true});if(!item)return res.status(404).json({error:"Resource not found."});res.json({ok:true,resource:resource(item.toObject())})}));
 app.delete("/api/admin/resources",admin,asyncRoute(async(req,res)=>{const item=await Resource.findByIdAndDelete(req.query.id);if(!item)return res.status(404).json({error:"Not found"});const cleanup=[];if(item.storageId)cleanup.push(destroyUpload(item.storageId,{resource_type:"raw"}));if(item.previewImageStorageId)cleanup.push(destroyUpload(item.previewImageStorageId));const results=await Promise.allSettled(cleanup);if(results.some(result=>result.status==="rejected"))console.error("Deleted resource storage cleanup was incomplete",{resourceId:String(item._id)});res.json({ok:true})}));
 const streamResourceFile=async(req,res,item)=>{
-  let sourceUrl=item.fileUrl;
-  if(item.storageId){if(!storageConfigured())return res.status(503).json({error:"Document storage is not configured."});sourceUrl=createSignedRawDownload({publicId:item.storageId,attachment:req.query.download==="1"});}
+  const download=req.query.download==="1";
+  const source=resolveResourceSource(item,{download,uploadDir:localUploadDir,localUploadsEnabled,cloudinaryConfigured});
+  if(source.kind==="unavailable")return res.status(source.status).json({error:source.error});
+  if(source.kind==="local")return deliverLocalResourceFile({res,item,filePath:source.filePath,download});
   const requestHeaders={Accept:item.fileType||"application/octet-stream"};
   if(req.get("range"))requestHeaders.Range=req.get("range");
-  let source;
-  try{source=await fetch(sourceUrl,{headers:requestHeaders,signal:AbortSignal.timeout(20_000)});}catch(error){console.error("[resource:download]",{resourceId:String(item._id),storage:item.storageId?"cloudinary":"legacy",reason:error?.name==="TimeoutError"?"timeout":"connection_failed"});return res.status(502).json({error:"Document storage is temporarily unavailable."});}
-  if(!source.ok||!source.body){console.error("[resource:download]",{resourceId:String(item._id),storage:item.storageId?"cloudinary":"legacy",providerStatus:source.status});return res.status(502).json({error:"Document storage is temporarily unavailable."});}
-  const safeName=safeFileName(item.fileName),inline=new Set(["application/pdf","image/jpeg","image/png","image/webp"]).has(item.fileType)&&req.query.download!=="1";
-  res.status(source.status===206?206:200);res.setHeader("Content-Type",item.fileType||source.headers.get("content-type")||"application/octet-stream");res.setHeader("Content-Disposition",`${inline?"inline":"attachment"}; filename="${safeName}"`);res.setHeader("X-Content-Type-Options","nosniff");res.setHeader("Cache-Control","public, max-age=300, must-revalidate");
-  for(const header of ["content-length","content-range","accept-ranges"])if(source.headers.get(header))res.setHeader(header,source.headers.get(header));
-  await pipeline(Readable.fromWeb(source.body),res);
+  let remote;
+  try{remote=await fetch(source.url,{headers:requestHeaders,signal:AbortSignal.timeout(20_000)});}catch(error){console.error("[resource:download]",{resourceId:String(item._id),storage:item.storageId?"cloudinary":"legacy",reason:error?.name==="TimeoutError"?"timeout":"connection_failed"});return res.status(502).json({error:"Document storage is temporarily unavailable."});}
+  if(!remote.ok||!remote.body){console.error("[resource:download]",{resourceId:String(item._id),storage:item.storageId?"cloudinary":"legacy",providerStatus:remote.status});return res.status(502).json({error:"Document storage is temporarily unavailable."});}
+  const safeName=safeFileName(item.fileName),inline=inlinePreviewable(item.fileType,download);
+  res.status(remote.status===206?206:200);res.setHeader("Content-Type",item.fileType||remote.headers.get("content-type")||"application/octet-stream");res.setHeader("Content-Disposition",`${inline?"inline":"attachment"}; filename="${safeName}"`);res.setHeader("X-Content-Type-Options","nosniff");res.setHeader("Cache-Control","public, max-age=300, must-revalidate");
+  for(const header of ["content-length","content-range","accept-ranges"])if(remote.headers.get(header))res.setHeader(header,remote.headers.get(header));
+  await pipeline(Readable.fromWeb(remote.body),res);
 };
 app.get("/api/admin/resources/:id/file",admin,asyncRoute(async(req,res)=>{const item=await Resource.findById(req.params.id).lean();if(!item)return res.status(404).json({error:"Not found"});await streamResourceFile(req,res,item)}));
 app.get("/api/resources/:id/file",asyncRoute(async(req,res)=>{const item=await Resource.findById(req.params.id).lean();if(!item||!item.published)return res.status(404).json({error:"Not found"});await streamResourceFile(req,res,item)}));

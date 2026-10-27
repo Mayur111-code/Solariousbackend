@@ -14,7 +14,7 @@ function sendTeamMember(url:string,method:"POST"|"PUT",body:FormData,onProgress:
 export default function AdminTeamManagement(){
   const [members,setMembers]=useState<Member[]>([]),[editing,setEditing]=useState<Member|null|undefined>(undefined),[preview,setPreview]=useState<Member|null>(null),[busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[photo,setPhoto]=useState<File|null>(null),[photoPreview,setPhotoPreview]=useState(""),[photoProgress,setPhotoProgress]=useState<number|null>(null);
   const load=useCallback(async()=>{try{const response=await adminFetch("/api/admin/team");if(!response.ok)throw await apiError(response,"Team members could not be loaded");setMembers((await response.json()).members||[])}catch(error:unknown){console.error("Team management error:",error);setNotice(getErrorMessage(error))}},[]);
-  useEffect(()=>{void load()},[load]);
+  useEffect(()=>{const timer=window.setTimeout(()=>{void load()},0);return()=>window.clearTimeout(timer)},[load]);
   useEffect(()=>()=>{if(photoPreview.startsWith("blob:"))URL.revokeObjectURL(photoPreview)},[photoPreview]);
   const openEditor=(member:Member|null)=>{setNotice("");setPhoto(null);setPhotoProgress(null);setPhotoPreview(member?.photo_url||"");setEditing(member)};
   const choosePhoto=(event:ChangeEvent<HTMLInputElement>)=>{const file=event.target.files?.[0];if(!file)return;if(!acceptedPhotoTypes.includes(file.type)){setNotice("Choose a JPG, PNG or WebP photograph.");event.target.value="";return}if(file.size>maxPhotoBytes){setNotice("Profile photographs must be 5 MB or smaller.");event.target.value="";return}if(photoPreview.startsWith("blob:"))URL.revokeObjectURL(photoPreview);setPhoto(file);setPhotoPreview(URL.createObjectURL(file));setNotice("");};
