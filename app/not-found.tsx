@@ -1,1 +1,15 @@
-import Link from "next/link";export default function NotFound(){return <main className="not-found"><span>404</span><h1>Page not found</h1><p>The page may have moved or the address may be incorrect.</p><div><Link className="button" href="/">Return home</Link><Link className="button button-ghost" href="/contact">Contact us</Link></div></main>}
+import InnerPageHero from "@/components/inner-page-hero";
+import { PUBLIC_HERO_PRESETS } from "@/lib/public-hero";
+
+export default function NotFound() {
+  return (
+    <main>
+      <InnerPageHero
+        {...PUBLIC_HERO_PRESETS.notFound}
+        eyebrow="404"
+        title="Page not found"
+        description="The page may have moved or the address may be incorrect."
+      />
+    </main>
+  );
+}

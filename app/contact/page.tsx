@@ -4,20 +4,23 @@ import LocationMap from "@/components/location-map";
 import PageShell from "@/components/page-shell";
 import WhatsAppLink from "@/components/whatsapp-contact";
 import { WHATSAPP_DISPLAY_NUMBER } from "@/lib/contact";
+import { PUBLIC_HERO_PRESETS } from "@/lib/public-hero";
 import { getCompanyCms, getLocations } from "@/lib/site-cms";
+
 export const metadata: Metadata = {
   title: "Contact Us",
   description:
     "Contact Solarious Energy for module specifications, quotations and project support.",
 };
+
 export default async function Page() {
   const [locations, company] = await Promise.all([getLocations(), getCompanyCms()]);
   return (
     <PageShell
+      {...PUBLIC_HERO_PRESETS.contact}
       eyebrow="Get in touch"
       title="Let’s Work Together"
       intro="Tell us about your application, capacity and timeline. The right Solarious team member can respond with confirmed information."
-      image="/ai-solar-intelligence.webp"
     >
       <section className="content-section">
         <div className="contact-layout">

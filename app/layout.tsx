@@ -24,6 +24,7 @@ import "./admin-cards.css";
 import "./whatsapp-contact.css";
 /* Loaded last so shared tokens and accessible states win over legacy rules. */
 import "./design-system.css";
+import "./public-hero.css";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import FloatingAssistant from "@/components/floating-assistant";

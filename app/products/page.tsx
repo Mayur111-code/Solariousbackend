@@ -1,21 +1,24 @@
 import type { Metadata } from "next";
 import ProductCatalog from "@/components/product-catalog";
 import PageShell from "@/components/page-shell";
+import { PUBLIC_HERO_PRESETS } from "@/lib/public-hero";
 import { getSiteProducts } from "@/lib/site-products";
+
 export const metadata: Metadata = {
   title: "High-Efficiency Solar Modules",
   description:
     "Explore Solarious Mono PERC, TOPCon, HJT and Bifacial module categories for commercial, industrial and utility projects.",
 };
 export const dynamic = "force-dynamic";
+
 export default async function Page() {
   const products = await getSiteProducts();
   return (
     <PageShell
+      {...PUBLIC_HERO_PRESETS.products}
       eyebrow="Solar module portfolio"
       title="High-Efficiency Solar Modules"
       intro="Engineered for every project—from commercial rooftops to utility-scale applications."
-      image="/utility-solar.webp"
     >
       <section className="content-section">
         <ProductCatalog products={products} />
