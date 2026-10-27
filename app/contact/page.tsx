@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import ContactForm from "@/components/contact-form";
 import LocationMap from "@/components/location-map";
 import PageShell from "@/components/page-shell";
+import WhatsAppLink from "@/components/whatsapp-contact";
+import { WHATSAPP_DISPLAY_NUMBER } from "@/lib/contact";
 import { getCompanyCms, getLocations } from "@/lib/site-cms";
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -66,6 +68,9 @@ export default async function Page() {
               <a className="button" href={`mailto:${company.generalEmail}`}>
                 Email Solarious
               </a>
+              <WhatsAppLink className="button button-ghost whatsapp-contact-link">
+                WhatsApp {WHATSAPP_DISPLAY_NUMBER}
+              </WhatsAppLink>
             </div>
             {company.primaryPhone && <p>Primary contact: <a href={`tel:${company.primaryPhone}`}>{company.primaryPhone}</a>{company.secondaryPhone ? <> · <a href={`tel:${company.secondaryPhone}`}>{company.secondaryPhone}</a></> : null}</p>}
             {company.officeContact && <p>{company.officeContact}</p>}

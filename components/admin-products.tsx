@@ -1,13 +1,19 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Archive,
+  Copy,
   Eye,
   FileUp,
+  ImageOff,
   ImageUp,
+  Layers,
   Loader2,
   Pencil,
   Plus,
+  PowerOff,
   Save,
   Trash2,
 } from "lucide-react";
@@ -40,6 +46,7 @@ type AdminProduct = {
   dimensions?: string;
   warranty?: string;
   displayOrder?: number;
+  updated_at?: string;
   featured?: boolean;
   series?: unknown[];
   technicalSpecifications?: Record<string, unknown>;
@@ -81,6 +88,45 @@ const slugify = (value: string) =>
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+const productStatus = (product: AdminProduct) => {
+  const value = (
+    product.status ||
+    (product.published === false ? "draft" : "published")
+  ).toLowerCase();
+  return ["published", "draft", "archived"].includes(value) ? value : "draft";
+};
+const formatUpdated = (value?: string) => {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf())
+    ? ""
+    : new Intl.DateTimeFormat("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }).format(date);
+};
+
+function ProductThumbnail({ product }: { product: AdminProduct }) {
+  const [failed, setFailed] = useState(false);
+  if (!product.image || failed) {
+    return (
+      <div className="admin-product-image-empty">
+        <ImageOff size={22} aria-hidden="true" />
+        <span>No image uploaded</span>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={product.image}
+      alt={`${product.name} product thumbnail`}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 const productImageTypes = new Set([
   "image/jpeg",
   "image/png",
@@ -485,69 +531,79 @@ export default function AdminProducts() {
         </div>
       ) : (
         <div className="admin-product-grid">
-          {products.map((product) => (
-            <article key={product.slug}>
-              {product.image ? (
-                <img src={product.image} alt="" />
-              ) : (
-                <div className="admin-product-image-empty">No image</div>
-              )}
-              <div>
-                <span>
-                  {product.category || product.technology}
-                  {product.moduleType ? ` · ${product.moduleType}` : ""}
-                </span>
-                <h3>{product.name}</h3>
-                <p>{product.summary}</p>
-                <small>
-                  {product.status ||
-                    (product.published === false ? "Draft" : "Published")}{" "}
-                  · Order {product.displayOrder ?? 0}
-                </small>
-                <div className="admin-inline-actions">
-                  <button
-                    className="button button-ghost"
-                    onClick={() => {
-                      setError("");
-                      setImagePreview(product.image ?? "");
-                      setEditing({
-                        ...product,
-                        applications: product.applications ?? [],
-                        features: product.features ?? [],
-                      });
-                    }}
-                  >
-                    <Pencil size={15} /> Edit
-                  </button>
-                  <button
-                    className="button button-ghost"
-                    onClick={() => duplicate(product)}
-                  >
-                    Duplicate
-                  </button>
-                  <button
-                    className="button button-ghost"
-                    onClick={() => void togglePublished(product)}
-                  >
-                    {product.published === false ? "Publish" : "Unpublish"}
-                  </button>
-                  <button
-                    className="button button-ghost"
-                    onClick={() => void archive(product)}
-                  >
-                    Archive
-                  </button>
-                  <button
-                    className="icon-button danger"
-                    onClick={() => void remove(product)}
-                    aria-label={`Delete ${product.name}`}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+          {products.map((product) => {
+            const status = productStatus(product);
+            const updated = formatUpdated(product.updated_at);
+            return (
+              <article className="admin-product-card ds-interactive" key={product.slug}>
+                <div className="admin-product-media">
+                  <ProductThumbnail key={`${product.slug}-${product.image || ""}`} product={product} />
+                  <span className={`admin-card-status status-${status}`}>{status}</span>
                 </div>
-              </div>
-            </article>
-          ))}
+                <div className="admin-product-body">
+                  <p className="admin-product-category">
+                    <Layers size={13} aria-hidden="true" />
+                    {product.category || product.technology}
+                    {product.moduleType ? ` · ${product.moduleType}` : ""}
+                  </p>
+                  <h3>{product.name}</h3>
+                  <p className="admin-product-summary">{product.summary}</p>
+                  <dl className="admin-product-meta">
+                    <div><dt>Technology</dt><dd>{product.technology}</dd></div>
+                    <div><dt>Model</dt><dd>{product.modelNumber || "—"}</dd></div>
+                    <div><dt>Order</dt><dd>{product.displayOrder ?? 0}</dd></div>
+                    {updated && <div><dt>Updated</dt><dd>{updated}</dd></div>}
+                  </dl>
+                  <div className="admin-card-actions">
+                    <button
+                      className="button button-ghost"
+                      onClick={() => {
+                        setError("");
+                        setImagePreview(product.image ?? "");
+                        setEditing({
+                          ...product,
+                          applications: product.applications ?? [],
+                          features: product.features ?? [],
+                        });
+                      }}
+                      aria-label={`Edit ${product.name}`}
+                    >
+                      <Pencil size={15} /> Edit
+                    </button>
+                    <button
+                      className="button button-ghost"
+                      onClick={() => duplicate(product)}
+                      aria-label={`Duplicate ${product.name}`}
+                    >
+                      <Copy size={15} /> Duplicate
+                    </button>
+                    <button
+                      className="button button-ghost"
+                      onClick={() => void togglePublished(product)}
+                      aria-label={`${product.published === false ? "Publish" : "Unpublish"} ${product.name}`}
+                    >
+                      <PowerOff size={15} />
+                      {product.published === false ? "Publish" : "Unpublish"}
+                    </button>
+                    <button
+                      className="button button-ghost"
+                      onClick={() => void archive(product)}
+                      aria-label={`Archive ${product.name}`}
+                    >
+                      <Archive size={15} /> Archive
+                    </button>
+                    <button
+                      className="icon-button danger"
+                      onClick={() => void remove(product)}
+                      aria-label={`Delete ${product.name}`}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
       {!loading && !products.length && (

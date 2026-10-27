@@ -134,7 +134,7 @@ export const defaultCompanyCms: CompanyCms = {
   companyProfile: "Solarious Energy brings manufacturing discipline, product technology and project-focused support together for the evolving solar industry.",
   primaryPhone: "",
   secondaryPhone: "",
-  whatsapp: "",
+  whatsapp: "919664379011",
   generalEmail: "info@solariousenergy.in",
   salesEmail: "",
   purchaseEmail: "",

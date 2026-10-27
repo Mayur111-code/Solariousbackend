@@ -1,0 +1,250 @@
+/* Premium admin cards for catalogue/project media, plus document thumbnails.
+   These styles only affect presentation; all existing API calls stay intact. */
+
+.admin-table td.admin-resource-thumb-cell {
+  display: table-cell;
+  width: 88px;
+  vertical-align: middle;
+  padding: 10px 12px;
+}
+.admin-resource-thumb-button {
+  display: block;
+  width: 72px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-50);
+  overflow: hidden;
+}
+.admin-resource-thumb-button:hover { border-color: var(--green-700); }
+.admin-resource-thumb {
+  position: relative;
+  display: grid;
+  width: 72px;
+  height: 58px;
+  place-items: center;
+  color: var(--solar-600);
+  background: linear-gradient(145deg, var(--surface-100), var(--surface-50));
+}
+.admin-resource-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  object-fit: contain;
+  background: #fff;
+}
+.admin-resource-thumb small {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--ink-700);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.admin-visibility-note { display: block !important; margin-top: 6px; color: var(--muted); font-size: 0.7rem; }
+.admin-resource-thumbnail-editor {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-50);
+}
+.admin-resource-thumbnail-editor strong { display: block; font-size: 0.84rem; }
+.admin-resource-thumbnail-editor p { margin: 3px 0 0; color: var(--muted); font-size: 0.76rem; line-height: 1.55; }
+.admin-thumb-preview {
+  display: grid;
+  width: 84px;
+  height: 68px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--solar-600);
+  text-align: center;
+}
+.admin-thumb-preview img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+.admin-thumb-preview.is-empty { gap: 2px; background: var(--surface-100); }
+.admin-thumb-preview small { font-size: 0.62rem; font-weight: 700; }
+
+/* Shared card chrome */
+.admin-card-status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+.status-published { color: #17633d; }
+.status-draft { color: #7c4a08; }
+.status-archived { color: #6b4a72; }
+.admin-product-media,
+.admin-gallery-media { position: relative; overflow: hidden; background: var(--surface-100); }
+.admin-product-image-empty,
+.admin-gallery-image-empty {
+  display: grid;
+  min-height: 180px;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  background: linear-gradient(145deg, var(--surface-100), var(--surface-50));
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+/* Admin product / project cards */
+.admin-product-grid .admin-product-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-0);
+  box-shadow: var(--shadow-sm);
+}
+.admin-product-grid .admin-product-card:hover { border-color: #bfd2c4; }
+.admin-product-grid .admin-product-media { padding: 0; aspect-ratio: 16 / 9; }
+.admin-product-grid .admin-product-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+}
+.admin-product-grid .admin-product-body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  padding: 20px;
+}
+.admin-product-grid .admin-product-category {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  color: var(--solar-700) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.admin-product-grid .admin-product-card h3 { margin: 0 0 8px; font-size: 1.22rem; }
+.admin-product-grid .admin-product-summary {
+  margin: 0 0 16px;
+  color: var(--muted) !important;
+  font-size: 0.86rem !important;
+  line-height: 1.6;
+}
+.admin-product-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin: auto 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.73rem;
+}
+.admin-product-meta > div { min-width: 0; }
+.admin-product-meta dt { color: var(--ink-700); font-weight: 800; }
+.admin-product-meta dd { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+.admin-card-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+.admin-card-actions .button { min-height: 38px; padding: 8px 11px; font-size: 0.72rem; }
+.admin-card-actions .icon-button { width: 38px; height: 38px; }
+
+/* Admin gallery / project-image cards */
+.admin-gallery-card { display: flex; min-width: 0; flex-direction: column; }
+.admin-gallery-card:hover { border-color: #bfd2c4; }
+.admin-gallery-card > .admin-gallery-media { display: block; gap: 0; padding: 0; aspect-ratio: 4 / 3; }
+.admin-gallery-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.admin-gallery-card > .admin-gallery-body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0;
+  padding: 12px;
+}
+.admin-gallery-category {
+  margin: 0 0 6px;
+  color: var(--solar-700);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.admin-gallery-card h3 { margin: 0 0 6px; font-size: 0.98rem; overflow-wrap: anywhere; }
+.admin-gallery-description {
+  display: -webkit-box;
+  margin: 0 0 10px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.admin-gallery-meta {
+  display: grid;
+  gap: 4px;
+  margin: auto 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 0.68rem;
+}
+.admin-gallery-meta > div { display: grid; grid-template-columns: minmax(55px, 0.45fr) minmax(0, 1fr); gap: 8px; }
+.admin-gallery-meta dt { color: var(--ink-700); font-weight: 800; }
+.admin-gallery-meta dd { margin: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-gallery-card .admin-card-status { font-size: 0.58rem; }
+.admin-gallery-card > footer { border-top: 1px solid var(--line); padding: 10px; }
+.admin-gallery-card > footer .icon-button { width: 34px; height: 34px; }
+
+@media (max-width: 600px) {
+  .admin-product-grid .admin-product-body { padding: 16px; }
+  .admin-product-meta { grid-template-columns: 1fr; }
+  .admin-card-actions .button { flex: 1 1 auto; }
+  .admin-resource-thumbnail-editor { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 420px) {
+  .admin-gallery-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-product-card,
+  .admin-gallery-card { transition: none; }
+  .admin-product-card:hover,
+  .admin-gallery-card:hover { transform: none; }
+}
+
+/* Legacy table/card span rules are more specific; keep card badges consistent. */
+.admin-product-grid .admin-card-status,
+.admin-gallery-card .admin-card-status {
+  color: var(--ink-700);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.admin-product-grid .status-published,
+.admin-gallery-card .status-published { color: #17633d; }
+.admin-product-grid .status-draft,
+.admin-gallery-card .status-draft { color: #7c4a08; }
+.admin-product-grid .status-archived,
+.admin-gallery-card .status-archived { color: #6b4a72; }

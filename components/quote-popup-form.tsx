@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, ReactNode, useRef, useState } from "react";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
 import { apiError } from "@/lib/api-error";
 
@@ -12,6 +12,14 @@ const enquiryTypes = [
   "Solar module supply",
   "Technical consultation",
 ];
+
+function RequiredLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-field-label">
+      <span>{children}</span> <span className="required-mark" aria-hidden="true">*</span>
+    </span>
+  );
+}
 
 export default function QuotePopupForm() {
   const [sending, setSending] = useState(false);
@@ -80,7 +88,7 @@ export default function QuotePopupForm() {
     <form className="quote-popup-form" onSubmit={submit} noValidate={false}>
       <div className="quote-popup-fields">
         <label>
-          Full name <span>*</span>
+          <RequiredLabel>Full name</RequiredLabel>
           <input name="name" required minLength={2} maxLength={100} autoComplete="name" placeholder="Enter your name" />
         </label>
         <label>
@@ -88,22 +96,22 @@ export default function QuotePopupForm() {
           <input name="company" maxLength={120} autoComplete="organization" placeholder="Enter company name" />
         </label>
         <label>
-          Mobile number <span>*</span>
+          <RequiredLabel>Mobile number</RequiredLabel>
           <input name="phone" type="tel" required minLength={7} maxLength={22} autoComplete="tel" placeholder="+91 98765 43210" />
         </label>
         <label>
-          Email address <span>*</span>
+          <RequiredLabel>Email address</RequiredLabel>
           <input name="email" type="email" required maxLength={160} autoComplete="email" placeholder="you@company.com" />
         </label>
         <label>
-          Enquiry type <span>*</span>
+          <RequiredLabel>Enquiry type</RequiredLabel>
           <select name="enquiryType" required defaultValue="">
             <option value="" disabled>Select requirement</option>
             {enquiryTypes.map((type) => <option key={type}>{type}</option>)}
           </select>
         </label>
         <label>
-          City / location <span>*</span>
+          <RequiredLabel>City / location</RequiredLabel>
           <input name="location" required minLength={2} maxLength={120} autoComplete="address-level2" placeholder="Project location" />
         </label>
         <label>

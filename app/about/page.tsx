@@ -5,13 +5,20 @@ import CompanyDocumentsSection from "@/components/company-documents-section";
 import PageShell from "@/components/page-shell";
 import TeamSection from "@/components/team-section";
 import { getAboutCms, getCompanyCms } from "@/lib/site-cms";
+import { getCompanyDocuments } from "@/lib/resources";
+import { getTeamMembers } from "@/lib/team";
 export const metadata: Metadata = {
   title: "About Us",
   description:
     "Learn about Solarious Energy, its mission, manufacturing focus and company values.",
 };
 export default async function Page() {
-  const [content, company] = await Promise.all([getAboutCms(), getCompanyCms()]);
+  const [content, company, teamMembers, documents] = await Promise.all([
+    getAboutCms(),
+    getCompanyCms(),
+    getTeamMembers(),
+    getCompanyDocuments(),
+  ]);
   return (
     <PageShell
       eyebrow={content.eyebrow}
@@ -49,8 +56,8 @@ export default async function Page() {
             </div>
           </section>
         )}
-        <TeamSection />
-        <CompanyDocumentsSection />
+        <TeamSection initialMembers={teamMembers} />
+        <CompanyDocumentsSection initialResources={documents} />
       </section>
     </PageShell>
   );
