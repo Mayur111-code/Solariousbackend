@@ -4,12 +4,22 @@ import type { Product } from "@/data/site";
 import { products } from "@/data/site";
 import InnerPageHero from "@/components/inner-page-hero";
 import LeadFormModal from "@/components/lead-form-modal";
+import { PUBLIC_HERO_PRESETS } from "@/lib/public-hero";
 import ProductSpecificationView from "@/components/product-specification-view";
 
 export default function ProductDetail({ product }: { product: Product }) {
   const related = products.filter(item => item.slug !== product.slug).slice(0, 3);
   return <main className="product-detail-page">
-    <InnerPageHero eyebrow={`${product.technology}${product.moduleType ? ` / ${product.moduleType}` : ""}`} title={`${product.name} Solar Modules`} description={product.summary} breadcrumb={product.name} image={product.image} actions={<><LeadFormModal label="Get a quote"/><a className="button button-ghost" href="#datasheet-heading"><FileDown size={16}/> View datasheets</a></>}/>
+    <InnerPageHero
+      {...PUBLIC_HERO_PRESETS.productDetail}
+      eyebrow={`${product.technology}${product.moduleType ? ` / ${product.moduleType}` : ""}`}
+      title={`${product.name} Solar Modules`}
+      description={product.summary}
+      breadcrumb={[{ label: "Products", href: "/products" }, { label: product.name }]}
+      image={product.image}
+      imageAlt={`${product.name} solar module technology`}
+      actions={<><LeadFormModal label="Get a quote"/><a className="button button-ghost" href="#datasheet-heading"><FileDown size={16}/> View datasheets</a></>}
+    />
     <section className="content-section product-overview-section">
       <div className="detail-columns"><article><p className="eyebrow">Technology overview</p><h2>Engineered around verified project requirements</h2><p>{product.summary} Final selection must use the applicable model, approved datasheet, site conditions and engineering review.</p><ul>{product.features.map(item => <li key={item}><CheckCircle2 size={17}/>{item}</li>)}</ul></article><div className="spec-panel"><h2>Product classification</h2><dl><div><dt>Technology</dt><dd>{product.name}</dd></div><div><dt>Construction</dt><dd>{product.moduleType ?? product.bifacial}</dd></div><div><dt>Verified power range</dt><dd>{product.powerRating ?? "Confirm current series"}</dd></div><div><dt>Verified efficiency range</dt><dd>{product.efficiency ?? "Confirm current series"}</dd></div><div><dt>Cell format</dt><dd>{product.cellType ?? "Confirm current series"}</dd></div><div><dt>Applications</dt><dd>{product.applications.join(", ")}</dd></div></dl></div></div>
       <ProductSpecificationView product={product}/>

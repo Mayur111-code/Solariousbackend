@@ -1,0 +1,328 @@
+/* Shared public-page hero system.
+   The homepage carousel remains the visual reference: full-bleed solar imagery,
+   a dark left-to-right gradient, large white type, and the same CTA pair. */
+
+.premium-inner-hero.public-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  min-height: clamp(540px, 70vh, 720px);
+  width: 100%;
+  margin: 0;
+  padding: clamp(112px, 11vw, 150px) max(24px, calc((100vw - 1180px) / 2)) clamp(68px, 8vw, 96px);
+  overflow: hidden;
+  color: #fff;
+  background: #071018;
+}
+
+.premium-inner-hero.public-hero.public-hero-compact {
+  min-height: clamp(430px, 56vh, 570px);
+  padding-top: clamp(105px, 9vw, 132px);
+  padding-bottom: clamp(56px, 6vw, 76px);
+}
+
+.public-hero-media,
+.public-hero-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.public-hero-media {
+  z-index: 0;
+  overflow: hidden;
+}
+
+.public-hero-media img {
+  object-fit: cover;
+  object-position: var(--public-hero-position, center);
+  width: 100%;
+  height: 100%;
+  inset: 0;
+}
+
+.public-hero-overlay {
+  z-index: 1;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(3, 10, 15, var(--hero-overlay-left, 0.86)) 0%,
+      rgba(3, 10, 15, var(--hero-overlay-middle, 0.62)) 44%,
+      rgba(3, 10, 15, var(--hero-overlay-right, 0.18)) 76%,
+      rgba(3, 10, 15, var(--hero-overlay-edge, 0.32)) 100%
+    ),
+    linear-gradient(0deg, rgba(3, 10, 15, var(--hero-overlay-bottom, 0.45)), transparent 58%);
+}
+
+.public-hero.overlay-light {
+  --hero-overlay-left: 0.76;
+  --hero-overlay-middle: 0.5;
+  --hero-overlay-right: 0.1;
+  --hero-overlay-edge: 0.24;
+  --hero-overlay-bottom: 0.34;
+}
+
+.public-hero.overlay-medium {
+  --hero-overlay-left: 0.86;
+  --hero-overlay-middle: 0.62;
+  --hero-overlay-right: 0.18;
+  --hero-overlay-edge: 0.32;
+  --hero-overlay-bottom: 0.45;
+}
+
+.public-hero.overlay-strong {
+  --hero-overlay-left: 0.91;
+  --hero-overlay-middle: 0.72;
+  --hero-overlay-right: 0.3;
+  --hero-overlay-edge: 0.4;
+  --hero-overlay-bottom: 0.56;
+}
+
+.public-hero-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.public-hero-copy {
+  width: min(100%, 760px);
+}
+
+.public-hero.hero-align-center .public-hero-copy {
+  width: min(100%, 860px);
+  margin-inline: auto;
+  text-align: center;
+}
+
+.public-hero.hero-align-center .hero-breadcrumb,
+.public-hero.hero-align-center .eyebrow,
+.public-hero.hero-align-center .public-hero-actions {
+  justify-content: center;
+}
+
+.public-hero.hero-align-center .public-hero-overlay {
+  background:
+    linear-gradient(90deg, rgba(3, 10, 15, 0.72), rgba(3, 10, 15, 0.48), rgba(3, 10, 15, 0.72)),
+    linear-gradient(0deg, rgba(3, 10, 15, 0.5), transparent 60%);
+}
+
+.public-hero .hero-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 24px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.public-hero .hero-breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.public-hero .hero-breadcrumb a {
+  color: #f4b942;
+}
+
+.public-hero .hero-breadcrumb a:hover {
+  color: #ffd784;
+}
+
+.public-hero .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 20px;
+  color: #f4b942;
+  font-size: var(--type-label, 0.72rem);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.public-hero .eyebrow > span {
+  display: inline-block;
+  width: 24px;
+  height: 2px;
+  flex: 0 0 auto;
+  background: #f4b942;
+}
+
+.premium-inner-hero.public-hero h1 {
+  max-width: 780px;
+  margin: 0 0 20px;
+  color: #fff;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: clamp(2.8rem, 5.4vw, 5.35rem);
+  font-weight: 750;
+  line-height: 1.03;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  text-shadow: 0 3px 24px rgba(0, 0, 0, 0.3);
+}
+
+.public-hero-description {
+  max-width: 660px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: clamp(1rem, 1.45vw, 1.2rem);
+  line-height: 1.7;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.24);
+}
+
+.public-hero.hero-align-center .public-hero-description {
+  margin-inline: auto;
+}
+
+.public-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.public-hero .button {
+  min-height: 48px;
+  padding: 13px 20px;
+  border-radius: 8px;
+  font-size: 0.79rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.public-hero .button:hover {
+  transform: translateY(-1px);
+}
+
+.public-hero .button.hero-outline,
+.public-hero .button.button-ghost {
+  border-color: rgba(255, 255, 255, 0.52) !important;
+  background: rgba(6, 14, 20, 0.26) !important;
+  color: #fff !important;
+  backdrop-filter: blur(7px);
+}
+
+.public-hero .button.hero-outline:hover,
+.public-hero .button.button-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.76) !important;
+  background: rgba(6, 14, 20, 0.4) !important;
+  color: #fff !important;
+}
+
+.public-hero .button:focus-visible,
+.public-hero a:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+
+/* Legal content follows the compact image hero without repeating its H1. */
+.legal-page.legal-content {
+  min-height: 0;
+  padding-top: clamp(48px, 7vw, 80px);
+  padding-bottom: clamp(70px, 10vw, 120px);
+}
+
+@media (max-width: 900px) {
+  .premium-inner-hero.public-hero {
+    min-height: 520px;
+    padding-inline: clamp(22px, 6vw, 54px);
+    padding-top: clamp(112px, 15vw, 145px);
+  }
+
+  .premium-inner-hero.public-hero.public-hero-compact {
+    min-height: 420px;
+  }
+
+  .public-hero-media img {
+    object-position: var(--public-hero-position-mobile, var(--public-hero-position, center));
+  }
+
+  .public-hero-overlay {
+    background:
+      linear-gradient(90deg, rgba(3, 10, 15, 0.88), rgba(3, 10, 15, 0.58) 72%, rgba(3, 10, 15, 0.42)),
+      linear-gradient(0deg, rgba(3, 10, 15, 0.58), transparent 62%);
+  }
+}
+
+@media (max-width: 560px) {
+  .premium-inner-hero.public-hero {
+    min-height: 500px;
+    padding: 112px 18px 62px;
+  }
+
+  .premium-inner-hero.public-hero.public-hero-compact {
+    min-height: 410px;
+    padding-top: 104px;
+    padding-bottom: 52px;
+  }
+
+  .premium-inner-hero.public-hero h1 {
+    margin-bottom: 16px;
+    font-size: clamp(2.45rem, 11.5vw, 3.65rem);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+  }
+
+  .public-hero .eyebrow {
+    margin-bottom: 16px;
+  }
+
+  .public-hero-description {
+    font-size: 0.98rem;
+    line-height: 1.65;
+  }
+
+  .public-hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 26px;
+  }
+
+  .public-hero-actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .public-hero .hero-breadcrumb {
+    margin-bottom: 18px;
+  }
+}
+
+/* Keep wide product data tables inside their own scroller so detail pages do
+   not introduce page-level horizontal scrolling beneath the compact hero. */
+.product-overview-section {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.product-overview-section > * {
+  min-width: 0;
+}
+
+@media (max-width: 650px) {
+  .product-overview-section .series-picker {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-hero .button {
+    transition: none;
+  }
+
+  .public-hero .button:hover {
+    transform: none;
+  }
+}

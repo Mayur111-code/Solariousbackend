@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import InnerPageHero from "@/components/inner-page-hero";
+import { PUBLIC_HERO_PRESETS } from "@/lib/public-hero";
 import { getManufacturingCms } from "@/lib/site-cms";
 
 export const metadata: Metadata = {
@@ -26,10 +27,11 @@ export default async function ManufacturingPage() {
   return (
     <main className="premium-manufacturing-page">
       <InnerPageHero
+        {...PUBLIC_HERO_PRESETS.manufacturing}
         eyebrow={content.eyebrow}
         title={content.title}
         description={content.intro}
-        image={content.heroImage}
+        image={content.heroImage || PUBLIC_HERO_PRESETS.manufacturing.image}
       />
       <section className="manufacturing-editorial premium-section">
         <div className="premium-heading-row">

@@ -3,12 +3,29 @@ import QuoteWizard from "@/components/quote-wizard";
 import WhatsAppLink from "@/components/whatsapp-contact";
 import { getCompanyCms } from "@/lib/site-cms";
 import InnerPageHero from "@/components/inner-page-hero";
-export const metadata:Metadata={title:"Request a Quote",description:"Submit project and solar module requirements to the Solarious Energy team."};
-export default async function Page(){
-  const company=await getCompanyCms();
-  return <main className="quote-page">
-    <InnerPageHero eyebrow="Project inquiry" title="Request a Solar Quote" description="Share your project details through a guided five-step form. Confirmed specifications and pricing are provided by the Solarious team."/>
-    <QuoteWizard/>
-    <p className="quote-contact-note">For quotation assistance, email <a href={`mailto:${company.generalEmail}`}>{company.generalEmail}</a> or <WhatsAppLink className="quote-whatsapp-link">message us on WhatsApp</WhatsAppLink>.</p>
-  </main>;
+import { PUBLIC_HERO_PRESETS } from "@/lib/public-hero";
+
+export const metadata: Metadata = {
+  title: "Request a Quote",
+  description: "Submit project and solar module requirements to the Solarious Energy team.",
+};
+
+export default async function Page() {
+  const company = await getCompanyCms();
+  return (
+    <main className="quote-page">
+      <InnerPageHero
+        {...PUBLIC_HERO_PRESETS.quote}
+        eyebrow="Project inquiry"
+        title="Request a Solar Quote"
+        description="Share your project details through a guided five-step form. Confirmed specifications and pricing are provided by the Solarious team."
+      />
+      <QuoteWizard />
+      <p className="quote-contact-note">
+        For quotation assistance, email{" "}
+        <a href={`mailto:${company.generalEmail}`}>{company.generalEmail}</a> or{" "}
+        <WhatsAppLink className="quote-whatsapp-link">message us on WhatsApp</WhatsAppLink>.
+      </p>
+    </main>
+  );
 }
