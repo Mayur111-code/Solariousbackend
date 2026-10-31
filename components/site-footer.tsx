@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, Mail } from "lucide-react";
+import { ArrowUp, Globe, Mail } from "lucide-react";
 import type { CompanyCms } from "@/lib/site-cms";
 import WhatsAppLink from "@/components/whatsapp-contact";
 
@@ -118,6 +118,9 @@ export default function SiteFooter({
           © {new Date().getFullYear()} {company.legalName}. All rights reserved.
         </span>
         <span>
+          <Link className="footer-top-link" href="#main-content">
+            <ArrowUp size={14} aria-hidden="true" /> Back to top
+          </Link>
           <Link href="/privacy-policy">Privacy Policy</Link>
           <Link href="/terms">Terms &amp; Conditions</Link>
           <Link

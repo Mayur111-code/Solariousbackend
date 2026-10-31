@@ -27,3 +27,11 @@ node --test tests/*.test.mjs  # frontend contract tests
 ```
 
 Never commit environment files or service credentials.
+
+## Design system
+
+Public pages share one premium navy-and-gold design layer in
+`app/solarious-ui.css`, imported last in `app/layout.tsx` so it re-skins the
+whole site through the existing class contract. Navigation height, radii,
+spacing scale, colour tokens and responsive breakpoints are documented in
+[`docs/UI-REDESIGN.md`](docs/UI-REDESIGN.md).

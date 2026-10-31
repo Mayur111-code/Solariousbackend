@@ -87,7 +87,7 @@ export default async function Home() {
             </Link>
           ))}
         </div>
-        <p className="metric-band-note" style={{ background: "transparent", padding: "10px 0 0", color: "#6b7671" }}>
+        <p className="metric-band-note">
           A certification is shown as verified only after the certificate document is uploaded and approved. Request the
           current compliance pack with any quotation.
         </p>
