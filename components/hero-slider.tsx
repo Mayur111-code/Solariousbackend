@@ -126,8 +126,15 @@ export default function HeroSlider({ banners }: { banners: HeroBanner[] }) {
         <h1 key={`h-${current.id}`}>{current.headline}</h1>
         <p className="hero-slider-lede" key={`p-${current.id}`}>{current.supporting_text}</p>
         <div className="hero-actions">
-          <Link className="button" href={current.cta_href}>{current.cta_label}<ArrowRight size={18} /></Link>
-          <Link className="button hero-outline" href="/quote">Get a Quote</Link>
+          {/* Primary: the catalogue. Secondary: the single enquiry flow. Both
+              reuse existing routes — no duplicated products or quote pages. */}
+          <Link className="button hero-primary" href="/products">
+            Explore Products
+            <ArrowRight size={18} />
+          </Link>
+          <Link className="button hero-outline" href="/quote">
+            Get a Quote
+          </Link>
         </div>
         <div className="hero-highlights">
           {heroHighlights.map(({ icon: Icon, label, detail }) => (

@@ -8,12 +8,15 @@ export type CertificationRecord = {
   category: string;
   categoryLabel: string;
   standards: string[];
+  issuingAuthority: string;
+  description: string;
   scope: string;
   auditRelevance: string;
   verificationStatus: string;
   verified: boolean;
   certificateNumber: string;
   documentUrl: string;
+  logoUrl: string;
   issuedAt: string | null;
   expiresAt: string | null;
   expired: boolean;
@@ -85,12 +88,15 @@ const fallbackRegistry: CertificationRegistry = {
         category: framework.id,
         categoryLabel: framework.label,
         standards: framework.standards,
+        issuingAuthority: "",
+        description: framework.description,
         scope: framework.scope,
         auditRelevance: framework.auditRelevance,
         verificationStatus: "unverified",
         verified: false,
         certificateNumber: "",
         documentUrl: "",
+        logoUrl: "",
         issuedAt: null,
         expiresAt: null,
         expired: false,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileText, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Product } from "@/data/site";
 
@@ -281,43 +281,6 @@ export default function ProductSpecificationView({
             ))}
         </ul>
         <p className="spec-review-note">{text(specifications.sourceReview)}</p>
-      </section>
-      <section
-        className="datasheet-section"
-        aria-labelledby="datasheet-heading"
-      >
-        <div className="product-section-heading">
-          <p className="eyebrow">Original documents</p>
-          <h2 id="datasheet-heading">Datasheet preview &amp; download</h2>
-          <p>Original client-supplied PDFs are preserved without alteration.</p>
-        </div>
-        <div className="datasheet-grid">
-          {product.datasheets?.map((sheet) => (
-            <article key={sheet.url}>
-              <header>
-                <FileText />
-                <div>
-                  <span>{sheet.moduleType}</span>
-                  <h3>{sheet.title}</h3>
-                  <small>{(sheet.fileSize / 1024 / 1024).toFixed(1)} MiB</small>
-                </div>
-              </header>
-              <object
-                data={`${sheet.url}#view=FitH`}
-                type="application/pdf"
-                aria-label={`${sheet.title} preview`}
-              >
-                <p>
-                  PDF preview is unavailable in this browser.{" "}
-                  <a href={sheet.url}>Open the document</a>.
-                </p>
-              </object>
-              <a className="button button-ghost" href={sheet.url} download>
-                <Download size={16} /> Download datasheet
-              </a>
-            </article>
-          ))}
-        </div>
       </section>
     </>
   );

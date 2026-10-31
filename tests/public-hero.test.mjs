@@ -78,8 +78,6 @@ test("all hero presets use existing local assets and real application routes", a
     "/about",
     "/services",
     "/products",
-    "/manufacturing",
-    "/projects",
     "/gallery",
     "/contact",
     "/quote",
@@ -116,12 +114,10 @@ test("all public pages route their hero through the shared system", async () => 
     "app/gallery/page.tsx": /<PageShell/,
     "app/products/page.tsx": /<PageShell/,
     "app/services/page.tsx": /<SectionPage/,
-    "app/projects/page.tsx": /<SectionPage/,
     "app/quality/page.tsx": /<SectionPage/,
     "app/sustainability/page.tsx": /<SectionPage/,
     "app/compare/page.tsx": /<ToolPageShell/,
     "app/solar-recommendation/page.tsx": /<ToolPageShell/,
-    "app/manufacturing/page.tsx": /<InnerPageHero/,
     "app/quote/page.tsx": /<InnerPageHero/,
     "app/events/page.tsx": /<InnerPageHero/,
     "app/events/[slug]/page.tsx": /<InnerPageHero/,
@@ -150,6 +146,19 @@ test("all public pages route their hero through the shared system", async () => 
   assert.match(toolPageShell, /compact = true/);
 });
 
+test("withdrawn Manufacturing and Projects pages keep their URLs alive as redirects", async () => {
+  const [manufacturing, projects] = await Promise.all([
+    read("app/manufacturing/page.tsx"),
+    read("app/projects/page.tsx"),
+  ]);
+  // Tasks 2 keeps the old URLs working instead of returning a 404.
+  assert.match(manufacturing, /permanentRedirect\("\/quality"\)/);
+  assert.match(projects, /permanentRedirect\("\/gallery"\)/);
+  for (const source of [manufacturing, projects]) {
+    assert.doesNotMatch(source, /<InnerPageHero|<SectionPage|<h1/);
+  }
+});
+
 test("hero presets cover every applicable public page family", async () => {
   const presets = await read("lib/public-hero.ts");
   for (const key of [
@@ -158,8 +167,6 @@ test("hero presets cover every applicable public page family", async () => {
     "services",
     "products",
     "productDetail",
-    "manufacturing",
-    "projects",
     "gallery",
     "quality",
     "sustainability",

@@ -587,7 +587,7 @@ export default function AdminSiteCms() {
             </div>
           ))}
           <label>
-            Optional certification / partner logo URLs (one per line)
+            Client / partner logo URLs (one per line) — shown in the About page logo showcase
             <textarea
               rows={4}
               value={branding.partnerLogoUrls.join("\n")}

@@ -4,7 +4,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   CalendarDays,
-  Download,
   Eye,
   FileCheck2,
   FileImage,
@@ -153,14 +152,14 @@ export default function CompanyDocumentsSection({
     return () => controller.abort();
   }, [hasInitialResources]);
 
+  /* Preview-only: the public About page streams the document for reading and
+     never exposes a download action or a direct download URL. */
   const openPreview = (item: CompanyDocument) => {
-    const previewUrl = `/api/resources/${item.id}/file`;
     setPreview({
       title: item.title,
       fileName: item.file_name,
       fileType: item.file_type,
-      previewUrl,
-      downloadUrl: `${previewUrl}?download=1`,
+      previewUrl: `/api/resources/${item.id}/file`,
     });
   };
 
@@ -176,8 +175,9 @@ export default function CompanyDocumentsSection({
           <h2 id="company-documents-title">Company Documents &amp; Certifications</h2>
         </div>
         <p>
-          Browse documents published by an authorised Solarious administrator.
-          Draft and withdrawn files are never shown here.
+          Preview documents published by an authorised Solarious administrator.
+          Draft and withdrawn files are never shown here, and documents open in a
+          secure in-page viewer rather than a file download.
         </p>
       </div>
 
@@ -221,16 +221,9 @@ export default function CompanyDocumentsSection({
                   </dl>
                 </div>
                 <div className="doc-card-actions">
-                  <button type="button" onClick={() => openPreview(item)} aria-label={`View ${item.title}`}>
-                    <Eye size={16} aria-hidden="true" /> View
+                  <button type="button" onClick={() => openPreview(item)} aria-label={`Preview ${item.title}`}>
+                    <Eye size={16} aria-hidden="true" /> Preview document
                   </button>
-                  <a
-                    href={`${previewUrl}?download=1`}
-                    download={item.file_name}
-                    aria-label={`Download ${item.title}`}
-                  >
-                    <Download size={16} aria-hidden="true" /> Download
-                  </a>
                 </div>
               </article>
             );
@@ -240,7 +233,7 @@ export default function CompanyDocumentsSection({
         <p className="document-empty">Published company documents will appear here.</p>
       )}
 
-      <DocumentPreviewModal document={preview} onClose={closePreview} />
+      <DocumentPreviewModal document={preview} onClose={closePreview} allowDownload={false} />
     </section>
   );
 }

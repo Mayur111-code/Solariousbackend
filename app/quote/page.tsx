@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import RfqWizard from "@/components/rfq-wizard";
+import QuoteExperience from "@/components/quote-experience";
 import WhatsAppLink from "@/components/whatsapp-contact";
 import { getCompanyCms } from "@/lib/site-cms";
 import InnerPageHero from "@/components/inner-page-hero";
 import { PUBLIC_HERO_PRESETS } from "@/lib/public-hero";
 
 export const metadata: Metadata = {
-  title: "Request a Commercial Quote (RFQ)",
-  description: "Submit a structured B2B procurement inquiry for Solarious Energy solar modules and receive a tracked RFQ reference number.",
+  title: "Request a Solar Quote",
+  description: "Request a project-specific Solarious solar quote for residential, commercial, industrial or utility-scale requirements — or submit a structured commercial RFQ.",
   alternates: { canonical: "/quote" },
 };
 
@@ -17,11 +17,11 @@ export default async function Page() {
     <main className="quote-page">
       <InnerPageHero
         {...PUBLIC_HERO_PRESETS.quote}
-        eyebrow="Commercial procurement"
-        title="Request a Commercial Quote"
-        description="Submit a structured RFQ for module supply. Every submission is logged with a reference number and routed to the right sales desk — utility-scale requests of 1 MW and above are escalated immediately."
+        eyebrow="Quotations"
+        title="Request a Solar Quote"
+        description="Share your project details once and our team will respond with a project-specific quotation. Commercial and utility-scale buyers can submit a structured RFQ with a tracked reference number."
       />
-      <RfqWizard />
+      <QuoteExperience />
       <p className="quote-contact-note">
         For quotation assistance, email{" "}
         <a href={`mailto:${company.generalEmail}`}>{company.generalEmail}</a> or{" "}
