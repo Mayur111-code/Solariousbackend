@@ -21,6 +21,11 @@ Copy `.env.example` to `.env.local` for the Next.js app and `backend/.env.exampl
 | `FESTIVAL_TEMPLATE_FALLBACK` | Backend | Optional | Enables a deterministic image only after a retryable image-provider outage; never for auth/billing failures. | `backend/services/image-generation.mjs` |
 | `APINEX_API_KEY`, `APINEX_BASE_URL`, `APINEX_MODEL` | Backend | Optional | Marketing copy AI configuration. | `backend/services/ai.mjs` |
 | `EMAIL_PROVIDER`, `EMAIL_API_KEY`, `EMAIL_FROM` | Backend | Optional | Resend-backed enquiry reports; required only when reports are enabled. | `backend/services/enquiry-report.mjs` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_REPLY_TO` | Backend | Yes for RFQ email | SMTP transport for RFQ confirmations and internal alerts. When absent, RFQ mail falls back to `EMAIL_API_KEY`/`EMAIL_FROM` (Resend). | `backend/services/notifications.mjs` |
+| `RFQ_NOTIFICATION_EMAIL` | Backend | Yes for RFQ desk alerts | Comma-separated sales inbox that receives every RFQ. | `backend/services/notifications.mjs` |
+| `HIGH_PRIORITY_EMAIL` | Backend | Yes for >= 1 MW escalation | Comma-separated recipients added for RFQs of 1 MW and above. | `backend/services/notifications.mjs` |
+| `RFQ_SALES_ACTIONS` | Backend | Optional | Overrides the default mandatory sales actions listed in the high-priority alert. | `backend/services/notifications.mjs` |
+| `SLACK_WEBHOOK_URL` | Backend | Optional | HTTPS Slack/Teams incoming webhook posted for RFQs of 1 MW and above. Never exposed to the browser. | `backend/services/notifications.mjs` |
 | `LOCAL_MONGODB_URI`, `ATLAS_MONGODB_URI`, `ATLAS_EXPECTED_HOST`, `MIGRATION_BACKUP_DIR` | Backend migration | Migration only | Local-to-Atlas migration inputs and backup location. | `backend/scripts/migrate-local-mongodb-to-atlas.mjs` |
 | `PUBLIC_SITE_URL` | Backend migration | Migration only | Public site URL used by the production CMS migration. | `backend/scripts/migrate-production-cms.mjs` |
 | `API_BASE_URL`, `SMOKE_TEST_ORIGIN` | Backend test | Test only | API target and allowed Origin for the smoke-test script. | `backend/scripts/smoke-test.mjs` |
