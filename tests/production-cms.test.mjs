@@ -65,13 +65,21 @@ test("festival studio uses validated image generation and supported aspect ratio
     read("components/admin-ai-creatives.tsx"),
     read("backend/services/image-generation.mjs"),
   ]);
+  const [catalogue, options, providers] = await Promise.all([
+    read("backend/services/creative-catalogue.mjs"),
+    read("lib/creative-options.ts"),
+    read("backend/services/image-providers.mjs"),
+  ]);
   for (const ratio of ["1:1", "4:5", "9:16", "16:9"]) {
-    assert.ok(provider.includes(`"${ratio}"`));
-    assert.ok(studio.includes(`value="${ratio}"`));
+    assert.ok(catalogue.includes(`"${ratio}"`));
+    assert.ok(options.includes(`id: "${ratio}"`));
   }
+  // The admin studio renders the shared catalogue instead of a hardcoded list.
+  assert.match(studio, /ASPECT_RATIOS\.map/);
+  assert.match(studio, /ALL_CREATIVE_CATEGORIES\.map/);
   assert.match(server, /renderFestivalCreative/);
-  assert.match(server, /validateImageBuffer\(generated\.buffer/);
-  assert.match(provider, /api\.stability\.ai\/v2beta\/stable-image\/generate/);
+  assert.match(server, /validateImageBuffer\(completed\.buffer|validateImageBuffer\(generated\.buffer/);
+  assert.match(providers, /api\.stability\.ai\/v2beta\/stable-image\/generate/);
   assert.doesNotMatch(server, /deterministic-fallback/);
   assert.doesNotMatch(server, /FESTIVAL_TEMPLATE_FALLBACK/);
   assert.match(provider, /model: "deterministic-fallback"/);

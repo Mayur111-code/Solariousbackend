@@ -32,6 +32,9 @@ test("weekly reports use a protected daily scheduler and exact seven-day periods
   assert.match(server,/7\*24\*60\*60\*1000/);
   assert.match(server,/lockExpiresAt=new Date\(Date\.now\(\)\+10\*60\*1000\)/);
   assert.match(server,/REPORT_CLAIM_EXPIRED/);
-  assert.match(route,/authorization !== `Bearer \$\{secret\}`/);
+  assert.match(route,/cronAuthorised\(request\)/);
+  const cron = await read("lib/cron-auth.ts");
+  assert.match(cron,/crypto\.subtle\.digest\("SHA-256"/);
+  assert.match(cron,/if \(!secret\) return false/);
   assert.match(vercel,/"schedule": "30 3 \* \* \*"/);
 });

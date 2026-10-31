@@ -36,7 +36,7 @@ test("festival generation polling tolerates the initial request race", async () 
     read("components/admin-ai-creatives.tsx"),
   ]);
   assert.match(server, /creative-generations\/:key.*?status\(202\).*?status:"generating"/);
-  assert.match(studio, /catch\{\/\* Keep generation alive/);
+  assert.match(studio, /catch \{\s*\/\* The final POST response stays authoritative/);
   assert.match(studio, /window\.clearTimeout\(timer\)/);
 });
 
