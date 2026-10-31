@@ -957,6 +957,12 @@ button.button:hover {
   font-size: 0.82rem;
 }
 
+.hero-events-cta.hero-ai {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(4, 19, 38, 0.42);
+  color: #ffffff;
+}
+
 .hero-events-cta small {
   color: rgba(255, 255, 255, 0.66);
   font-size: 0.75rem;
@@ -5706,11 +5712,14 @@ button.button:hover {
 }
 
 .icon-box,
-.ai-indicator {
+.ai-indicator:not(.hero-ai) {
   color: var(--gold-700);
 }
 
-.ai-indicator {
+/* The hero "Events & Activities" link also carries .ai-indicator, but it sits
+   on a dark glass panel with white text — it must never inherit this light
+   cream card styling or the label becomes unreadable. */
+.ai-indicator:not(.hero-ai) {
   border-color: rgba(245, 181, 46, 0.45);
   background: #fffaef;
 }
