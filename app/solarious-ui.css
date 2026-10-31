@@ -3982,3 +3982,21 @@ button.button:hover {
 .footer-top-link:hover {
   color: var(--gold-500);
 }
+
+/* Empty states on public pages -------------------------------------------- */
+.gallery-empty,
+.content-section .admin-empty,
+.events-grid + .admin-empty {
+  padding: clamp(36px, 5vw, 56px) 24px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: #ffffff;
+  color: var(--slate-500);
+  font-size: 0.94rem;
+  text-align: center;
+}
+
+.content-section .admin-empty h2,
+.content-section .admin-empty h3 {
+  color: var(--navy-900);
+}
