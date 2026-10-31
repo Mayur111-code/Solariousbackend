@@ -51,7 +51,7 @@
 .certification-records{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:20px}
 .certification-card{padding:18px;border:1px solid #e6ebe7;border-radius:12px;background:#fbfcfb}
 .certification-card-head{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
-.verification-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:.68rem;font-weight:900;letter-spacing:.03em;text-transform:uppercase}
+.verification-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:.75rem;font-weight:900;letter-spacing:.03em;text-transform:uppercase}
 .verification-chip.verified{background:#e7f6ec;color:#1f6b3a}
 .verification-chip.pending{background:#fff4e2;color:#8a5a1e}
 .verification-chip.expired{background:#fdecea;color:#9e2923}
@@ -89,7 +89,7 @@
 .rfq-admin-toolbar input,.rfq-admin-toolbar select{min-height:42px;padding:0 12px;border:1px solid #d4dbd6;border-radius:8px;background:#fff;font:inherit}
 .rfq-admin-toolbar input{flex:1 1 240px;min-width:0}
 .rfq-admin-toolbar button{min-height:42px}
-.rfq-priority-pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:.68rem;font-weight:900;text-transform:uppercase}
+.rfq-priority-pill{display:inline-block;padding:4px 9px;border-radius:999px;font-size:.75rem;font-weight:900;text-transform:uppercase}
 .rfq-priority-pill.high{background:#fdecea;color:#9e2923}
 .rfq-priority-pill.medium{background:#fff4e2;color:#8a5a1e}
 .rfq-priority-pill.normal{background:#eef2f6;color:#33465a}
