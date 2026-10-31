@@ -73,18 +73,23 @@ export const classifyProviderFailure = (status, extra = {}) => {
  * instead of letting an admin discover the problem after a 30-second timeout.
  */
 export const imageConfiguration = () => {
-  const configuredProvider = (process.env.IMAGE_PROVIDER?.trim() || "").toLowerCase();
+  const configuredProvider = (process.env.IMAGE_PROVIDER?.trim() || "stability").toLowerCase();
   const provider = getProvider(configuredProvider);
   const model = (process.env.IMAGE_MODEL?.trim() || provider?.defaultModel || "").toLowerCase();
   const hasKey = Boolean(process.env.IMAGE_API_KEY?.trim());
+  const supported = Boolean(provider && provider.models.includes(model));
   return {
     provider: configuredProvider,
     providerLabel: provider?.label || "",
-    configured: Boolean(configuredProvider && hasKey),
+    // "configured" means a request would actually reach a provider: a known
+    // vendor, a model that belongs to it, and a key. A mismatched pair (for
+    // example IMAGE_PROVIDER=openai with IMAGE_MODEL=core) stays unconfigured
+    // so the studio disables Generate instead of failing after a timeout.
+    configured: Boolean(supported && hasKey),
     model,
     supportedModels: provider?.models || [],
     supportedProviders: providerIds,
-    capability: provider && provider.models.includes(model) ? "text-to-image" : "unsupported",
+    capability: supported ? "text-to-image" : "unsupported",
   };
 };
 
@@ -113,11 +118,8 @@ export async function generateMarketingImage({ prompt, aspectRatio = "1:1" } = {
   const requestId = randomUUID();
   const provider = getProvider(config.provider);
 
-  if (!config.configured)
-    throw failure("Image generation is not configured.", "IMAGE_PROVIDER_NOT_CONFIGURED", 503, {
-      ...config,
-      requestId,
-    });
+  // Capability is checked before the key so an unknown provider or a model that
+  // does not belong to it reports "unsupported" rather than "not configured".
   if (!provider || config.capability !== "text-to-image")
     throw failure(
       "The configured provider or model does not support image generation.",
@@ -125,6 +127,11 @@ export async function generateMarketingImage({ prompt, aspectRatio = "1:1" } = {
       503,
       { ...config, requestId },
     );
+  if (!config.configured)
+    throw failure("Image generation is not configured.", "IMAGE_PROVIDER_NOT_CONFIGURED", 503, {
+      ...config,
+      requestId,
+    });
   if (!provider.aspectRatios.includes(aspectRatio))
     throw failure("The selected image aspect ratio is not supported.", "PROVIDER_INVALID_REQUEST", 400, {
       ...config,

@@ -41,7 +41,8 @@ test("configuration reports an unsupported model instead of guessing", () => {
   process.env.IMAGE_API_KEY = "test-key";
   const config = imageConfiguration();
   assert.equal(config.capability, "unsupported");
-  assert.equal(config.configured, true);
+  // A mismatched provider/model pair must never look ready for a request.
+  assert.equal(config.configured, false);
 });
 
 test("configuration is not considered ready without an API key", () => {
