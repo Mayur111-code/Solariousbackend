@@ -136,7 +136,7 @@ export const defaultPerformanceMetrics: { verified: boolean; note: string; metri
   note: "Module specifications are indicative and vary by model and configuration. Confirm against the current approved datasheet before specifying.",
   metrics: [
     { label: "High-Density Output", value: "Up to 710W+", description: "N-Type TOPCon & HJT architecture", published: true, displayOrder: 0 },
-    { label: "Peak Efficiency", value: "22.8%", description: "Low temperature coefficient and weak-light yield", published: true, displayOrder: 1 },
+    { label: "Peak Efficiency", value: "26.6%", description: "Low temperature coefficient and weak-light yield", published: true, displayOrder: 1 },
     { label: "Output Warranty", value: "30 Years", description: "Linear output warranty", published: true, displayOrder: 2 },
     { label: "Quality Inspection", value: "100% EL Tested", description: "Multi-stage quality checks", published: true, displayOrder: 3 },
   ],

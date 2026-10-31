@@ -1061,7 +1061,7 @@ button.button:hover {
 /* Brand introduction ------------------------------------------------------ */
 .premium-intro {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) minmax(280px, 0.62fr);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.62fr);
   gap: clamp(24px, 4vw, 64px);
   align-items: start;
   border-bottom: 1px solid var(--line-soft);
@@ -1069,14 +1069,6 @@ button.button:hover {
 
 .premium-intro h2 {
   font-size: clamp(2rem, 3.6vw, 3.4rem);
-}
-
-.premium-section-number {
-  padding-top: 8px;
-  color: var(--slate-400);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
 }
 
 .premium-intro-copy {
@@ -1134,7 +1126,9 @@ button.button:hover {
 
 .metric-band-note {
   margin: 14px 0 0;
-  color: var(--slate-400);
+  padding: 0;
+  background: transparent;
+  color: var(--slate-900);
   font-size: 0.78rem;
   line-height: 1.6;
 }
@@ -1270,13 +1264,6 @@ button.button:hover {
   flex-direction: column;
   gap: 8px;
   padding: 20px 20px 18px;
-}
-
-.product-showcase-index {
-  color: var(--gold-700);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
 }
 
 .product-showcase-body h3 {
@@ -1478,16 +1465,8 @@ button.button:hover {
   box-shadow: var(--shadow-card);
 }
 
-.premium-pillar-grid article > span {
-  align-self: start;
-  color: var(--slate-400);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-}
-
 .premium-pillar-grid svg {
-  margin: 26px 0 0;
+  margin: 0;
   width: 44px;
   height: 44px;
   padding: 11px;
@@ -1831,13 +1810,6 @@ button.button:hover {
   box-shadow: var(--shadow-card);
 }
 
-.content-card > span {
-  color: var(--gold-700);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-}
-
 .content-card > svg {
   position: absolute;
   top: 24px;
@@ -1858,8 +1830,15 @@ button.button:hover {
   object-fit: cover;
 }
 
+.content-card img ~ h2 {
+  padding-right: 0;
+}
+
+/* The check icon sits in the top-right corner, so the heading keeps clear of it;
+   headings that start below a card image never reach it (see img ~ h2). */
 .content-card h2 {
-  margin: 40px 0 10px;
+  margin: 0 0 10px;
+  padding-right: 46px;
   color: var(--navy-900);
   font-size: 1.25rem;
   font-weight: 700;
@@ -2845,11 +2824,11 @@ button.button:hover {
 
 @media (max-width: 1050px) {
   .premium-intro {
-    grid-template-columns: 44px 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .premium-intro-copy {
-    grid-column: 2;
+    grid-column: 1;
     padding-top: 0;
   }
 
@@ -2874,10 +2853,6 @@ button.button:hover {
     align-items: center;
     gap: 4px 18px;
     min-height: 0;
-  }
-
-  .premium-pillar-grid article > span {
-    grid-column: 1 / -1;
   }
 
   .premium-pillar-grid svg {
@@ -3010,10 +2985,6 @@ button.button:hover {
 
   .premium-intro {
     grid-template-columns: 1fr;
-  }
-
-  .premium-section-number {
-    display: none;
   }
 
   .premium-manufacturing {
@@ -3739,6 +3710,25 @@ button.button:hover {
 
 .ai-feature-card h3,
 .ai-card-top strong {
+  color: var(--navy-900);
+}
+
+/* The sequence number that used to sit on the left of this row is gone, so the
+   technology icon keeps its original top-right position. */
+.ai-section .ai-card-top {
+  justify-content: flex-end;
+}
+
+/* The homepage paints this section with its own navy surface, so the text
+   inside it has to come from the light-on-dark set. Without these overrides
+   the card headings above sit navy-on-navy and disappear. */
+.premium-home .ai-section .ai-feature-card h3 {
+  color: #ffffff;
+}
+
+/* The floating analytics panel is a white card over the section photograph;
+   its heading used to inherit the section's white text and disappear. */
+.premium-home .ai-section .analytics-panel {
   color: var(--navy-900);
 }
 
