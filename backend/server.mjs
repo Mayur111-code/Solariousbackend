@@ -83,6 +83,9 @@ const requiresDatabase=(req,res,next)=>{if(databaseStatus().connected)return nex
 app.use("/api",(req,res,next)=>["/health","/admin/login","/admin/session","/admin/logout"].includes(req.path)?next():requiresDatabase(req,res,next));
 app.get("/api/files/:name",asyncRoute(async(req,res)=>{if(!localUploadsEnabled)return res.status(404).json({error:"Not found"});const name=safeFileName(req.params.name);res.sendFile(join(localUploadDir,name),error=>{if(error&&!res.headersSent)res.status(error.statusCode===404?404:500).json({error:error.statusCode===404?"Not found":"File could not be read."})})}));
 const id=row=>row?{...row,id:String(row._id),_id:undefined,created_at:row.createdAt,updated_at:row.updatedAt}:row;
+/* Business locations: coordinates are the admin panel's source of truth, so
+   they are normalised to numbers on every read (never strings, never swapped). */
+const locationView=row=>{const base=id(row);if(!base)return base;const latitude=Number(base.latitude),longitude=Number(base.longitude);return{...base,latitude:Number.isFinite(latitude)?latitude:null,longitude:Number.isFinite(longitude)?longitude:null};};
 const resource=row=>{const x=id(row);return{...x,file_name:x.fileName,file_type:x.fileType,file_size:x.fileSize,file_url:x.fileUrl,display_order:x.displayOrder,published:x.published?1:0}};
 const banner=row=>{const x=id(row);return{...x,image_url:x.imageUrl,alt_text:x.altText,supporting_text:x.supportingText,cta_label:x.ctaLabel,cta_href:x.ctaHref,display_order:x.displayOrder,published:x.published?1:0}};
 const teamMember=row=>{const x=id(row);return{...x,short_info:x.shortInfo,photo_url:x.photoUrl,linkedin_url:x.linkedinUrl,display_order:x.displayOrder,is_active:Boolean(x.isActive)}};
@@ -288,11 +291,43 @@ app.delete("/api/admin/logs",admin,asyncRoute(async(req,res)=>{const before=req.
 app.get("/api/site-settings/:key",asyncRoute(async(req,res)=>{if(!publicSiteSettingKeys.has(req.params.key))return res.status(404).json({error:"Not found"});const setting=await Setting.findOne({key:req.params.key}).lean();res.setHeader("Cache-Control","no-store");res.json({value:setting?.value||null})}));
 app.get("/api/admin/settings/:key",admin,asyncRoute(async(req,res)=>{if(!publicSiteSettingKeys.has(req.params.key))return res.status(404).json({error:"Setting not found."});res.setHeader("Cache-Control","no-store");res.json({setting:await Setting.findOne({key:req.params.key}).lean()})}));
 app.put("/api/admin/settings/:key",admin,asyncRoute(async(req,res)=>{const value=sanitizeSiteSetting(req.params.key,req.body),setting=await Setting.findOneAndUpdate({key:req.params.key},{$set:{value},$setOnInsert:{key:req.params.key}},{upsert:true,new:true,runValidators:true});await ProtectedAudit.create({action:`settings.${req.params.key}.update`,actor:adminUsername,details:{settingId:String(setting._id)}});res.setHeader("Cache-Control","no-store");res.json({ok:true,setting})}));
-const locationValues=body=>{const name=String(body?.name||"").trim(),address=String(body?.address||"").trim(),latitude=Number(body?.latitude),longitude=Number(body?.longitude),mapsUrl=String(body?.mapsUrl||"").trim();if(!name||!address||!Number.isFinite(latitude)||latitude < -90||latitude > 90||!Number.isFinite(longitude)||longitude < -180||longitude > 180)return null;try{const url=new URL(mapsUrl);if(!["https:","http:"].includes(url.protocol))return null}catch{return null}return{name,address,latitude,longitude,mapsUrl,primary:Boolean(body.primary),active:body.active!==false,verificationStatus:body.verificationStatus==="verified"?"verified":"pending",displayOrder:Math.max(0,Number(body.displayOrder)||0)}};
-app.get("/api/locations",asyncRoute(async(_req,res)=>{res.setHeader("Cache-Control","no-store");res.json({locations:(await BusinessLocation.find({active:true}).sort({primary:-1,displayOrder:1,name:1}).lean()).map(id)})}));
-app.get("/api/admin/locations",admin,asyncRoute(async(_req,res)=>res.json({locations:(await BusinessLocation.find().sort({primary:-1,displayOrder:1,name:1}).lean()).map(id)})));
-app.post("/api/admin/locations",admin,asyncRoute(async(req,res)=>{const values=locationValues(req.body);if(!values)return res.status(400).json({error:"Name, address, valid coordinates and a map URL are required."});if(values.primary)await BusinessLocation.updateMany({},{$set:{primary:false}});const item=await BusinessLocation.create(values);res.status(201).json({ok:true,location:id(item.toObject())})}));
-app.put("/api/admin/locations/:id",admin,asyncRoute(async(req,res)=>{const values=locationValues(req.body);if(!values)return res.status(400).json({error:"Name, address, valid coordinates and a map URL are required."});if(values.primary)await BusinessLocation.updateMany({_id:{$ne:req.params.id}},{$set:{primary:false}});const item=await BusinessLocation.findByIdAndUpdate(req.params.id,values,{new:true,runValidators:true});if(!item)return res.status(404).json({error:"Location not found."});res.json({ok:true,location:id(item.toObject())})}));
+/* Validate an admin location payload and return per-field errors so the panel can
+   point at the offending input. Blank coordinate strings are rejected explicitly:
+   Number("") is 0, which would otherwise be stored as a silent 0,0 location. */
+const locationCoordinate=(raw,min,max)=>{if(raw===null||raw===undefined)return null;if(typeof raw==="string"&&raw.trim()==="")return null;const value=Number(raw);return Number.isFinite(value)&&value>=min&&value<=max?value:null};
+const locationValues=(body,{partial=false}={})=>{
+  const errors={};
+  const has=key=>Object.prototype.hasOwnProperty.call(body||{},key);
+  const values={};
+  if(!partial||has("name")){const name=String(body?.name||"").trim();if(!name)errors.name="Enter the location name.";values.name=name}
+  if(!partial||has("address")){const address=String(body?.address||"").trim();if(!address)errors.address="Enter the address.";values.address=address}
+  if(!partial||has("latitude")||has("longitude")){
+    const latitude=locationCoordinate(body?.latitude,-90,90),longitude=locationCoordinate(body?.longitude,-180,180);
+    if(latitude===null)errors.latitude="Latitude must be a number between -90 and 90.";
+    if(longitude===null)errors.longitude="Longitude must be a number between -180 and 180.";
+    if(latitude===0&&longitude===0)errors.latitude="0, 0 is not a business location.";
+    values.latitude=latitude;values.longitude=longitude;
+  }
+  if(!partial||has("mapsUrl")){
+    const mapsUrl=String(body?.mapsUrl||"").trim();
+    let valid=Boolean(mapsUrl);
+    if(valid){try{const url=new URL(mapsUrl);valid=["https:","http:"].includes(url.protocol)}catch{valid=false}}
+    if(!valid)errors.mapsUrl="Enter a valid http(s) map URL.";
+    values.mapsUrl=mapsUrl;
+  }
+  if(!partial||has("primary"))values.primary=Boolean(body?.primary);
+  if(!partial||has("active"))values.active=body?.active!==false;
+  if(!partial||has("verificationStatus"))values.verificationStatus=body?.verificationStatus==="verified"?"verified":"pending";
+  if(!partial||has("displayOrder"))values.displayOrder=Math.max(0,Number(body?.displayOrder)||0);
+  return {values,errors,ok:Object.keys(errors).length===0};
+};
+app.get("/api/locations",asyncRoute(async(_req,res)=>{res.setHeader("Cache-Control","no-store");res.json({locations:(await BusinessLocation.find({active:true}).sort({primary:-1,displayOrder:1,name:1}).lean()).map(locationView)})}));
+app.get("/api/admin/locations",admin,asyncRoute(async(_req,res)=>{res.setHeader("Cache-Control","no-store");res.json({locations:(await BusinessLocation.find().sort({primary:-1,displayOrder:1,name:1}).lean()).map(locationView)})}));
+app.post("/api/admin/locations",admin,asyncRoute(async(req,res)=>{const {values,errors,ok}=locationValues(req.body);if(!ok)return res.status(400).json({error:"Name, address, valid coordinates and a map URL are required.",fields:errors});if(values.primary)await BusinessLocation.updateMany({},{$set:{primary:false}});const item=await BusinessLocation.create(values);res.status(201).json({ok:true,location:locationView(item.toObject())})}));
+app.put("/api/admin/locations/:id",admin,asyncRoute(async(req,res)=>{const {values,errors,ok}=locationValues(req.body);if(!ok)return res.status(400).json({error:"Name, address, valid coordinates and a map URL are required.",fields:errors});if(values.primary)await BusinessLocation.updateMany({_id:{$ne:req.params.id}},{$set:{primary:false}});const item=await BusinessLocation.findByIdAndUpdate(req.params.id,values,{new:true,runValidators:true});if(!item)return res.status(404).json({error:"Location not found."});res.json({ok:true,location:locationView(item.toObject())})}));
+/* PATCH applies only the supplied fields, so a coordinate-only update from the
+   admin panel can never blank out the name, address or map URL. */
+app.patch("/api/admin/locations/:id",admin,asyncRoute(async(req,res)=>{const {values,errors,ok}=locationValues(req.body,{partial:true});if(!ok)return res.status(400).json({error:"One or more location fields are invalid.",fields:errors});if(!Object.keys(values).length)return res.status(400).json({error:"No location fields were supplied."});if(values.primary)await BusinessLocation.updateMany({_id:{$ne:req.params.id}},{$set:{primary:false}});const item=await BusinessLocation.findByIdAndUpdate(req.params.id,{$set:values},{new:true,runValidators:true});if(!item)return res.status(404).json({error:"Location not found."});await ProtectedAudit.create({action:"locations.update",actor:adminUsername,details:{id:String(item._id)}}).catch(()=>{});res.setHeader("Cache-Control","no-store");res.json({ok:true,location:locationView(item.toObject())})}));
 app.delete("/api/admin/locations/:id",admin,asyncRoute(async(req,res)=>{const item=await BusinessLocation.findByIdAndDelete(req.params.id);if(!item)return res.status(404).json({error:"Location not found."});res.json({ok:true})}));
 // ============================================================================
 // Procurement platform: RFQ pipeline + certification registry

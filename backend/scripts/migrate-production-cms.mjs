@@ -24,17 +24,21 @@ const db = mongoose.connection.db,
   now = new Date();
 await db
   .collection("businesslocations")
+  // Matched on name only: databases that already hold an admin-edited location
+  // keep their coordinates ($setOnInsert never overwrites), while a fresh
+  // database is seeded with the client-confirmed Google Maps pin
+  // (Plus Code 4Q7X+4QP, Place ID ChIJr08tLgDX3jsRy_ufuwXzE78).
   .updateOne(
     {
       name: "Mayureshwar Solar Energy Pvt Ltd",
-      latitude: 21.112265,
-      longitude: 74.798172,
     },
     {
       $setOnInsert: {
+        latitude: 21.112841,
+        longitude: 74.799437,
         address: "4Q7X+4QP, Babhalde, Dhule, Maharashtra, India",
         mapsUrl:
-          "https://www.google.com/maps/search/?api=1&query=21.112265%2C74.798172",
+          "https://www.google.com/maps/search/?api=1&query=21.112841%2C74.799437",
         primary: false,
         active: true,
         verificationStatus: "pending",

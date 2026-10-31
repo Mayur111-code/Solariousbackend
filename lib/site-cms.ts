@@ -106,13 +106,17 @@ export const defaultManufacturingCms: ManufacturingCms = {
     published: true,
   })),
 };
+/* Fallback record only. The published coordinates come from the admin panel
+   (`/api/locations`); this pair is the client-confirmed Google Maps pin
+   (Plus Code 4Q7X+4QP, Place ID ChIJr08tLgDX3jsRy_ufuwXzE78) so a first run
+   still lands on the exact factory marker instead of an estimated city point. */
 export const defaultLocation: SiteLocation = {
   name: "Mayureshwar Solar Energy Pvt Ltd",
   address: "4Q7X+4QP, Babhalde, Dhule, Maharashtra, India",
-  latitude: 21.112265,
-  longitude: 74.798172,
+  latitude: 21.112841,
+  longitude: 74.799437,
   mapsUrl:
-    "https://www.google.com/maps/search/?api=1&query=21.112265%2C74.798172",
+    "https://www.google.com/maps/search/?api=1&query=21.112841%2C74.799437",
   primary: true,
   active: true,
   verificationStatus: "pending",
@@ -221,9 +225,15 @@ export async function getLocations(): Promise<SiteLocation[]> {
     });
     if (!response.ok) return [defaultLocation];
     const data = (await response.json()) as { locations?: SiteLocation[] };
-    return Array.isArray(data.locations) && data.locations.length
-      ? data.locations
-      : [defaultLocation];
+    const published = (Array.isArray(data.locations) ? data.locations : [])
+      .map((item) => ({
+        ...item,
+        latitude: Number(item.latitude),
+        longitude: Number(item.longitude),
+        mapsUrl: item.mapsUrl || "",
+      }))
+      .filter((item) => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
+    return published.length ? published : [defaultLocation];
   } catch {
     return [defaultLocation];
   }
