@@ -37,7 +37,7 @@ const navItems:AdminNavItem<Tab>[]=[
   {id:"events",label:"Events",icon:CalendarDays},
   {id:"team",label:"Team Members",icon:Users},
   {id:"resources",label:"Resources",icon:FileText},
-  {id:"marketing",label:"Marketing & Festival AI",icon:Sparkles},
+  {id:"marketing",label:"AI Creative Studio",icon:Sparkles},
   {id:"settings",label:"Settings",icon:Settings},
 ];
 const titleFor=(tab:Tab)=>navItems.find(item=>item.id===tab)?.label||"Dashboard";

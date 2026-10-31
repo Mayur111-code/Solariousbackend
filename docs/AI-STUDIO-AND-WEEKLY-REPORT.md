@@ -107,6 +107,13 @@ when a manual send and a scheduled run race. `send-now` uses the period itself a
 the key and answers `409 REPORT_ALREADY_SENT` unless `{resend: true}` is sent
 explicitly.
 
+## Reviewing the email design without credentials
+
+`cd backend && npm run preview:report` renders the same builder used in
+production with sample records and writes `docs/weekly-report-preview.html`.
+It makes no database, network or provider call, so it is safe to run anywhere and
+cannot be mistaken for a delivered report.
+
 ## Manual configuration still required
 
 1. Verify the sending domain with the email provider and set

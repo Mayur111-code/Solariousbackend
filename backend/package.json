@@ -15,7 +15,8 @@
     "migrate:mongo:plan": "node scripts/migrate-local-mongodb-to-atlas.mjs",
     "migrate:mongo": "node scripts/migrate-local-mongodb-to-atlas.mjs --execute",
     "migrate:cms:plan": "node --env-file-if-exists=.env scripts/migrate-production-cms.mjs",
-    "migrate:cms": "node --env-file-if-exists=.env scripts/migrate-production-cms.mjs --execute"
+    "migrate:cms": "node --env-file-if-exists=.env scripts/migrate-production-cms.mjs --execute",
+    "preview:report": "node scripts/preview-weekly-report.mjs"
   },
   "dependencies": {
     "cloudinary": "^2.11.0",
