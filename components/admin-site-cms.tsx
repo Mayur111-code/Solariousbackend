@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, ImageUp, Loader2, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
+import { mapsCoordinateUrl, validateCoordinates } from "@/lib/location";
 import { apiError } from "@/lib/api-error";
 
 type Section = { title: string; text: string; imageUrl?: string; displayOrder?: number; published?: boolean };
@@ -81,11 +82,21 @@ const manufacturingDefault: PageSetting = {
     published: true,
   })),
 };
-const newLocation = (): Location => ({
+/** Editing copy of a location: coordinates stay strings until they validate. */
+type LocationDraft = Omit<Location, "latitude" | "longitude"> & {
+  latitude: string;
+  longitude: string;
+};
+const toDraft = (item: Location): LocationDraft => ({
+  ...item,
+  latitude: Number.isFinite(Number(item.latitude)) ? String(item.latitude) : "",
+  longitude: Number.isFinite(Number(item.longitude)) ? String(item.longitude) : "",
+});
+const newLocation = (): LocationDraft => ({
   name: "",
   address: "",
-  latitude: 21.112265,
-  longitude: 74.798172,
+  latitude: "21.112841",
+  longitude: "74.799438",
   mapsUrl: "",
   primary: false,
   active: true,
@@ -114,7 +125,8 @@ export default function AdminSiteCms() {
       partnerLogoUrls: [] as string[],
     }),
     [locations, setLocations] = useState<Location[]>([]),
-    [editingLocation, setEditingLocation] = useState<Location | null>(null),
+    [editingLocation, setEditingLocation] = useState<LocationDraft | null>(null),
+    [locationErrors, setLocationErrors] = useState<{ latitude?: string; longitude?: string; name?: string; address?: string; mapsUrl?: string }>({}),
     [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
@@ -205,6 +217,32 @@ export default function AdminSiteCms() {
   const saveLocation = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!editingLocation) return;
+    // Coordinates are the source of truth for the public map: validate them
+    // before the request so an empty field can never be saved as 0.
+    const { coordinates, errors } = validateCoordinates(
+      editingLocation.latitude,
+      editingLocation.longitude,
+    );
+    const nextErrors: typeof locationErrors = { ...errors };
+    if (!editingLocation.name.trim()) nextErrors.name = "Enter the location name.";
+    if (!editingLocation.address.trim()) nextErrors.address = "Enter the address.";
+    if (coordinates) {
+      const mapsUrl = editingLocation.mapsUrl.trim();
+      let validUrl = Boolean(mapsUrl);
+      if (validUrl) {
+        try {
+          validUrl = ["https:", "http:"].includes(new URL(mapsUrl).protocol);
+        } catch {
+          validUrl = false;
+        }
+      }
+      if (!validUrl) nextErrors.mapsUrl = "Enter a valid http(s) map URL.";
+    }
+    setLocationErrors(nextErrors);
+    if (!coordinates || Object.keys(nextErrors).length) {
+      setNotice("Check the highlighted location fields before saving.");
+      return;
+    }
     setBusy(true);
     try {
       const response = await adminFetch(
@@ -214,13 +252,19 @@ export default function AdminSiteCms() {
         {
           method: editingLocation.id ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(editingLocation),
+          body: JSON.stringify({
+            ...editingLocation,
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
+            mapsUrl: editingLocation.mapsUrl.trim(),
+          }),
         },
       );
       if (!response.ok)
         throw await apiError(response, "Location could not be saved");
       setEditingLocation(null);
-      setNotice("Location saved.");
+      setLocationErrors({});
+      setNotice("Location saved. The public map now uses these coordinates.");
       await load();
     } catch (error) {
       setNotice(
@@ -498,7 +542,10 @@ export default function AdminSiteCms() {
           <button
             className="button button-ghost"
             type="button"
-            onClick={() => setEditingLocation(newLocation())}
+            onClick={() => {
+              setLocationErrors({});
+              setEditingLocation(newLocation());
+            }}
           >
             <Plus size={16} /> Add location
           </button>
@@ -517,7 +564,10 @@ export default function AdminSiteCms() {
                 <div className="admin-inline-actions">
                   <button
                     className="button button-ghost"
-                    onClick={() => setEditingLocation(item)}
+                    onClick={() => {
+                      setLocationErrors({});
+                      setEditingLocation(toDraft(item));
+                    }}
                   >
                     Edit
                   </button>
@@ -622,13 +672,13 @@ export default function AdminSiteCms() {
                 <input
                   required
                   value={editingLocation.name}
-                  onChange={(e) =>
-                    setEditingLocation({
-                      ...editingLocation,
-                      name: e.target.value,
-                    })
-                  }
+                  aria-invalid={Boolean(locationErrors.name)}
+                  onChange={(e) => {
+                    setEditingLocation({ ...editingLocation, name: e.target.value });
+                    setLocationErrors((current) => ({ ...current, name: undefined }));
+                  }}
                 />
+                {locationErrors.name ? <span className="field-error">{locationErrors.name}</span> : null}
               </label>
               <label>
                 Address
@@ -636,13 +686,15 @@ export default function AdminSiteCms() {
                   required
                   rows={3}
                   value={editingLocation.address}
-                  onChange={(e) =>
-                    setEditingLocation({
-                      ...editingLocation,
-                      address: e.target.value,
-                    })
-                  }
+                  aria-invalid={Boolean(locationErrors.address)}
+                  onChange={(e) => {
+                    setEditingLocation({ ...editingLocation, address: e.target.value });
+                    setLocationErrors((current) => ({ ...current, address: undefined }));
+                  }}
                 />
+                {locationErrors.address ? (
+                  <span className="field-error">{locationErrors.address}</span>
+                ) : null}
               </label>
               <div className="admin-form-grid">
                 <label>
@@ -653,14 +705,19 @@ export default function AdminSiteCms() {
                     step="any"
                     min="-90"
                     max="90"
+                    inputMode="decimal"
                     value={editingLocation.latitude}
-                    onChange={(e) =>
-                      setEditingLocation({
-                        ...editingLocation,
-                        latitude: Number(e.target.value),
-                      })
-                    }
+                    aria-invalid={Boolean(locationErrors.latitude)}
+                    onChange={(e) => {
+                      setEditingLocation({ ...editingLocation, latitude: e.target.value });
+                      setLocationErrors((current) => ({ ...current, latitude: undefined }));
+                    }}
                   />
+                  {locationErrors.latitude ? (
+                    <span className="field-error">{locationErrors.latitude}</span>
+                  ) : (
+                    <span className="field-hint">From Google Maps: right-click the pin → copy coordinates.</span>
+                  )}
                 </label>
                 <label>
                   Longitude
@@ -670,28 +727,65 @@ export default function AdminSiteCms() {
                     step="any"
                     min="-180"
                     max="180"
+                    inputMode="decimal"
                     value={editingLocation.longitude}
-                    onChange={(e) =>
-                      setEditingLocation({
-                        ...editingLocation,
-                        longitude: Number(e.target.value),
-                      })
-                    }
+                    aria-invalid={Boolean(locationErrors.longitude)}
+                    onChange={(e) => {
+                      setEditingLocation({ ...editingLocation, longitude: e.target.value });
+                      setLocationErrors((current) => ({ ...current, longitude: undefined }));
+                    }}
                   />
+                  {locationErrors.longitude ? (
+                    <span className="field-error">{locationErrors.longitude}</span>
+                  ) : (
+                    <span className="field-hint">
+                      Latitude first, then longitude — never swapped.
+                    </span>
+                  )}
                 </label>
-                <label>
+                <label className="full">
                   Map URL
                   <input
                     required
-                    type="url"
+                    type="text"
                     value={editingLocation.mapsUrl}
-                    onChange={(e) =>
+                    aria-invalid={Boolean(locationErrors.mapsUrl)}
+                    onChange={(e) => {
+                      setEditingLocation({ ...editingLocation, mapsUrl: e.target.value });
+                      setLocationErrors((current) => ({ ...current, mapsUrl: undefined }));
+                    }}
+                  />
+                  {locationErrors.mapsUrl ? (
+                    <span className="field-error">{locationErrors.mapsUrl}</span>
+                  ) : (
+                    <span className="field-hint">
+                      Used by the &ldquo;Open in Google Maps&rdquo; link.
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="button button-ghost button-small"
+                    onClick={() => {
+                      const { coordinates } = validateCoordinates(
+                        editingLocation.latitude,
+                        editingLocation.longitude,
+                      );
+                      if (!coordinates) {
+                        setLocationErrors((current) => ({
+                          ...current,
+                          latitude: "Enter valid coordinates first.",
+                        }));
+                        return;
+                      }
                       setEditingLocation({
                         ...editingLocation,
-                        mapsUrl: e.target.value,
-                      })
-                    }
-                  />
+                        mapsUrl: mapsCoordinateUrl(coordinates),
+                      });
+                      setLocationErrors((current) => ({ ...current, mapsUrl: undefined }));
+                    }}
+                  >
+                    Build URL from these coordinates
+                  </button>
                 </label>
                 <label>
                   Verification
@@ -740,7 +834,10 @@ export default function AdminSiteCms() {
                 <button
                   type="button"
                   className="button button-ghost"
-                  onClick={() => setEditingLocation(null)}
+                  onClick={() => {
+                    setEditingLocation(null);
+                    setLocationErrors({});
+                  }}
                 >
                   Cancel
                 </button>

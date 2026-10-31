@@ -7,6 +7,10 @@ import { WHATSAPP_DISPLAY_NUMBER } from "@/lib/contact";
 import { PUBLIC_HERO_PRESETS } from "@/lib/public-hero";
 import { getCompanyCms, getLocations } from "@/lib/site-cms";
 
+/* The map coordinates come from the admin panel, so the page must never be
+   served from a stale build-time snapshot. */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Contact Us",
   description:
