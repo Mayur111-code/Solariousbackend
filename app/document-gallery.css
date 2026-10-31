@@ -86,7 +86,7 @@
 }
 .doc-sheet strong {
   color: var(--ink-700);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.14em;
 }
@@ -111,7 +111,7 @@
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.95);
   color: var(--ink-700);
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
