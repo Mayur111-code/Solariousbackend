@@ -4000,3 +4000,8 @@ button.button:hover {
 .content-section .admin-empty h3 {
   color: var(--navy-900);
 }
+
+/* The legacy "SCROLL" flourish collided with the new hero highlight row. */
+.premium-home .hero-slider::after {
+  content: none;
+}
