@@ -30,6 +30,8 @@ const productLinks = [
   ["Bifacial", "/products/bifacial"],
 ] as const;
 const solutionLinks = [
+  ["Request a Commercial Quote", "/quote"],
+  ["Certifications & Bankability", "/certifications"],
   ["Solar Savings Calculator", "/solar-calculator"],
   ["Find My Solar Solution", "/module-recommender"],
   ["Compare Modules", "/compare"],

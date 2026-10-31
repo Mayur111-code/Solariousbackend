@@ -29,6 +29,7 @@ const groups = [
       ["Solar Calculator", "/solar-calculator"],
       ["Compare Modules", "/compare"],
       ["Quality", "/quality"],
+      ["Certifications", "/certifications"],
     ],
   },
   {

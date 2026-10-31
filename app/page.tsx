@@ -1,7 +1,7 @@
 import Link from "next/link";
 import LeadFormModal from "@/components/lead-form-modal";
 import Image from "next/image";
-import { ArrowRight, ArrowUpRight, CalendarDays, Factory, Leaf, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BadgeCheck, CalendarDays, Factory, Leaf, ShieldCheck, ShieldAlert, Sparkles } from "lucide-react";
 import AiSolarSection from "@/components/ai-solar-section";
 import HeroSlider from "@/components/hero-slider";
 import PremiumProductShowcase from "@/components/premium-product-showcase";
@@ -11,6 +11,7 @@ import { getEvents } from "@/lib/events";
 import { getGallery } from "@/lib/gallery";
 import { getProductionHeroBanners } from "@/lib/hero-banners";
 import { getSiteProducts } from "@/lib/site-products";
+import { getCertifications, getPerformanceMetrics } from "@/lib/certifications";
 
 export const dynamic = "force-dynamic";
 
@@ -29,12 +30,69 @@ const fallbackGallery = [
 const formatDate = (value: string) => new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date(value));
 
 export default async function Home() {
-  const [banners, products, gallery, events, company] = await Promise.all([getProductionHeroBanners(), getSiteProducts(), getGallery(), getEvents(), getCompanyCms()]);
+  const [banners, products, gallery, events, company, metrics, certifications] = await Promise.all([getProductionHeroBanners(), getSiteProducts(), getGallery(), getEvents(), getCompanyCms(), getPerformanceMetrics(), getCertifications()]);
   const galleryPreview = gallery.length ? gallery.slice(0, 5) : fallbackGallery;
   const eventPreview = events.slice(0, 3);
 
+  const publishedMetrics = metrics.metrics.filter((metric) => metric.published !== false);
+  const complianceHighlights = certifications.groups.map((group) => ({
+    id: group.id,
+    label: group.label,
+    standards: [...new Set(group.records.flatMap((record) => record.standards))].slice(0, 4),
+    verified: group.records.every((record) => record.verified) && group.records.length > 0,
+  }));
+
   return <main className="premium-home">
     <HeroSlider banners={banners} />
+
+    {publishedMetrics.length ? (
+      <section className="premium-section" aria-labelledby="performance-metrics-heading">
+        <h2 id="performance-metrics-heading" className="visually-hidden">Module performance metrics</h2>
+        <dl className="metric-band">
+          {publishedMetrics.map((metric) => (
+            <div key={metric.label}>
+              <dt>{metric.label}</dt>
+              <dd>{metric.value}</dd>
+              <small>{metric.description}</small>
+            </div>
+          ))}
+        </dl>
+        <p className="metric-band-note">
+          {metrics.verified
+            ? "Figures verified against current approved module datasheets."
+            : "Indicative figures pending verification against approved module datasheets. "}
+          {metrics.note}
+        </p>
+      </section>
+    ) : null}
+
+    {complianceHighlights.length ? (
+      <section className="premium-section compliance-ribbon" aria-labelledby="compliance-ribbon-heading">
+        <div className="premium-heading-row">
+          <div>
+            <p className="premium-kicker">Bankability &amp; compliance</p>
+            <h2 id="compliance-ribbon-heading">Documented, <em>not assumed.</em></h2>
+          </div>
+          <Link className="premium-text-link" href="/certifications">Certification registry <ArrowRight size={16} /></Link>
+        </div>
+        <div className="compliance-ribbon-grid">
+          {complianceHighlights.map((item) => (
+            <Link href="/certifications" key={item.id} className="compliance-ribbon-item">
+              <span className={`verification-chip ${item.verified ? "verified" : "pending"}`}>
+                {item.verified ? <BadgeCheck size={14} /> : <ShieldAlert size={14} />}
+                {item.verified ? "Verified" : "Documentation pending"}
+              </span>
+              <strong>{item.label}</strong>
+              <small>{item.standards.join(" · ") || "Standards published after verification"}</small>
+            </Link>
+          ))}
+        </div>
+        <p className="metric-band-note" style={{ background: "transparent", padding: "10px 0 0", color: "#6b7671" }}>
+          A certification is shown as verified only after the certificate document is uploaded and approved. Request the
+          current compliance pack with any quotation.
+        </p>
+      </section>
+    ) : null}
 
     <section className="premium-intro premium-section" aria-labelledby="brand-introduction">
       <div className="premium-section-number">01</div>
