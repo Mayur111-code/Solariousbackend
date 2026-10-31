@@ -16,9 +16,9 @@ import { getCertifications, getPerformanceMetrics } from "@/lib/certifications";
 export const dynamic = "force-dynamic";
 
 const pillars = [
-  { number: "01", title: "Premium Quality", text: "Disciplined inspection, dependable materials and traceable quality checks shape every module.", icon: ShieldCheck },
-  { number: "02", title: "Advanced Technology", text: "Modern cell architectures support project-specific performance and design priorities.", icon: Sparkles },
-  { number: "03", title: "Sustainable Progress", text: "Responsible manufacturing and durable solar solutions support a cleaner energy future.", icon: Leaf },
+  { title: "Premium Quality", text: "Disciplined inspection, dependable materials and traceable quality checks shape every module.", icon: ShieldCheck },
+  { title: "Advanced Technology", text: "Modern cell architectures support project-specific performance and design priorities.", icon: Sparkles },
+  { title: "Sustainable Progress", text: "Responsible manufacturing and durable solar solutions support a cleaner energy future.", icon: Leaf },
 ];
 
 const fallbackGallery = [
@@ -95,7 +95,6 @@ export default async function Home() {
     ) : null}
 
     <section className="premium-intro premium-section" aria-labelledby="brand-introduction">
-      <div className="premium-section-number">01</div>
       <div><p className="premium-kicker">{company.companyName}</p><h2 id="brand-introduction">Engineering sunlight into <em>lasting value.</em></h2></div>
       <div className="premium-intro-copy"><p>{company.description}</p><p>We bring product technology, manufacturing discipline and responsive technical support together for commercial, industrial and utility-scale solar applications.</p><Link className="premium-text-link" href="/about">Discover Solarious <ArrowRight size={16} /></Link></div>
     </section>
@@ -123,7 +122,7 @@ export default async function Home() {
 
     <section className="premium-why premium-section" aria-labelledby="why-solarious">
       <div className="premium-heading-row"><div><p className="premium-kicker">Why Solarious</p><h2 id="why-solarious">Confidence at every <em>project stage.</em></h2></div><p>Purposeful technology, disciplined quality and responsible thinking—brought together for demanding solar projects.</p></div>
-      <div className="premium-pillar-grid">{pillars.map(({ number, title, text, icon: Icon }) => <article key={number}><span>{number}</span><Icon size={22} /><h3>{title}</h3><p>{text}</p></article>)}</div>
+      <div className="premium-pillar-grid">{pillars.map(({ title, text, icon: Icon }) => <article key={title}><Icon size={22} aria-hidden="true" /><h3>{title}</h3><p>{text}</p></article>)}</div>
     </section>
 
     <AiSolarSection />

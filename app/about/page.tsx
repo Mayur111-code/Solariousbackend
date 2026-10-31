@@ -86,7 +86,6 @@ export default async function Page() {
           {content.sections.map((section, index) => (
             <article className="content-card" key={`${section.title}-${index}`}>
               {section.imageUrl && <img src={section.imageUrl} alt="" loading="lazy" />}
-              <span>{String(index + 1).padStart(2, "0")}</span>
               <CheckCircle2 size={22} aria-hidden="true" />
               <h2>{section.title}</h2>
               <p>{section.text}</p>

@@ -7,10 +7,10 @@ import { ArrowRight, Bot, Calculator, ChartNoAxesCombined, SearchCheck, Send, Sp
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const features = [
-  { number: "01", title: "AI Solar Assistant", text: "Ask questions about Solarious products, technologies, applications, specifications and the quotation process.", label: "Ask Solarious AI", href: null, icon: Bot },
-  { number: "02", title: "Smart Module Finder", text: "Identify a suitable solar module category based on your project type, space and performance priorities.", label: "Find my module", href: "/module-recommender", icon: SearchCheck },
-  { number: "03", title: "Solar Project Calculator", text: "Get preliminary module quantity, system capacity and area estimates using transparent assumptions.", label: "Calculate project", href: "/solar-calculator", icon: Calculator },
-  { number: "04", title: "Intelligent Comparison", text: "Compare Mono PERC, TOPCon, HJT and Bifacial technologies using approved category-level information.", label: "Compare modules", href: "/compare", icon: ChartNoAxesCombined },
+  { title: "AI Solar Assistant", text: "Ask questions about Solarious products, technologies, applications, specifications and the quotation process.", label: "Ask Solarious AI", href: null, icon: Bot },
+  { title: "Smart Module Finder", text: "Identify a suitable solar module category based on your project type, space and performance priorities.", label: "Find my module", href: "/module-recommender", icon: SearchCheck },
+  { title: "Solar Project Calculator", text: "Get preliminary module quantity, system capacity and area estimates using transparent assumptions.", label: "Calculate project", href: "/solar-calculator", icon: Calculator },
+  { title: "Intelligent Comparison", text: "Compare Mono PERC, TOPCon, HJT and Bifacial technologies using approved category-level information.", label: "Compare modules", href: "/compare", icon: ChartNoAxesCombined },
 ];
 
 function AssistantDialog() {
@@ -54,6 +54,6 @@ export default function AiSolarSection() {
         <div className="ai-assurance"><Sparkles size={18} /><span><strong>Engineering assistance, not guesswork</strong><small>Digital guidance uses approved information and clearly identifies when technical confirmation is required.</small></span></div>
       </div>
     </div>
-    <div className="ai-feature-grid">{features.map(({ number, title, text, label, href, icon: Icon }) => <article className="ai-feature-card" key={number}><div className="ai-card-top"><span>{number}</span><Icon size={21} /></div><h3>{title}</h3><p>{text}</p>{href ? <Link className="ai-card-action" href={href}>{label} <ArrowRight size={15} /></Link> : <AssistantDialog />}</article>)}</div>
+    <div className="ai-feature-grid">{features.map(({ title, text, label, href, icon: Icon }) => <article className="ai-feature-card" key={title}><div className="ai-card-top"><Icon size={21} aria-hidden="true" /></div><h3>{title}</h3><p>{text}</p>{href ? <Link className="ai-card-action" href={href}>{label} <ArrowRight size={15} /></Link> : <AssistantDialog />}</article>)}</div>
   </section>;
 }

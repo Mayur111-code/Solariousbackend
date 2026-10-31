@@ -28,9 +28,8 @@ export default function SectionPage({
     >
       <section className="content-section">
         <div className="content-grid">
-          {content.sections.map(([title, text], index) => (
+          {content.sections.map(([title, text]) => (
             <article className="content-card" key={title}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
               <CheckCircle2 size={22} />
               <h2>{title}</h2>
               <p>{text}</p>
