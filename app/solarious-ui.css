@@ -1188,7 +1188,7 @@ button.button:hover {
   width: max-content;
   padding: 5px 10px;
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2346,8 +2346,8 @@ button.button:hover {
 
 .product-actions .product-cta-link {
   grid-column: 1 / -1;
-  min-height: 0;
-  padding: 2px 0 0;
+  min-height: 44px;
+  padding: 12px 0 0;
   color: var(--slate-500);
   font-weight: 700;
 }
@@ -4800,7 +4800,15 @@ button.button:hover {
 
 .certification-groups {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
+}
+
+.certification-card-head .verification-chip {
+  flex: 0 0 auto;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
 }
 
 .certification-group {
@@ -5886,12 +5894,12 @@ button.button:hover {
 
 .location-popup-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 6px;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -6013,12 +6021,12 @@ button.button:hover {
   .location-map-toolbar {
     top: 10px;
     right: 10px;
-    gap: 4px;
+    gap: 6px;
   }
 
   .location-map-toolbar button {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
   }
 
   .location-map-popup {
@@ -6036,17 +6044,19 @@ button.button:hover {
    links inside running copy are deliberately excluded.
    ========================================================================== */
 @media (max-width: 760px) {
-  .ai-card-action,
-  .product-cta-link,
-  .premium-event-track a,
-  .premium-cta-links a,
-  .quote-contact-note a.whatsapp-link {
-    min-height: 40px;
-    padding-block: 8px;
+  .ai-feature-grid .ai-card-action,
+  .product-actions .product-cta-link,
+  .premium-event-track article div > a,
+  .premium-cta-links > a,
+  .quote-page .quote-contact-note a.whatsapp-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-block: 10px;
   }
 
   .hero-breadcrumb a,
-  .footer-top-link {
+  .footer-bottom .footer-top-link {
     min-height: 34px;
   }
 }
