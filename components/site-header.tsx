@@ -15,15 +15,20 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-const primary = [
+/**
+ * Public navigation. Manufacturing and Projects were withdrawn from the public
+ * UI; their routes now issue permanent redirects so shared links and search
+ * results keep working. Content, records and admin modules are untouched.
+ */
+const primaryStart = [
   ["Home", "/"],
   ["About", "/about"],
   ["Services", "/services"],
-  ["Manufacturing", "/manufacturing"],
-  ["Projects", "/projects"],
-  ["Gallery", "/gallery"],
-  ["Contact", "/contact"],
 ] as const;
+const primaryMiddle = [
+  ["Gallery", "/gallery"],
+] as const;
+const primaryEnd = [["Contact", "/contact"]] as const;
 const productLinks = [
   ["All Products", "/products"],
   ["Mono PERC", "/products/mono-perc"],
@@ -237,9 +242,9 @@ export default function SiteHeader({
           />
         </Link>
         <nav className="desktop-nav" aria-label="Primary navigation">
-          <NavLink href="/" label="Home" pathname={pathname} />
-          <NavLink href="/about" label="About" pathname={pathname} />
-          <NavLink href="/services" label="Services" pathname={pathname} />
+          {primaryStart.map(([label, href]) => (
+            <NavLink key={href} href={href} label={label} pathname={pathname} />
+          ))}
           <DesktopMenu
             label="Products"
             links={productLinks}
@@ -247,13 +252,9 @@ export default function SiteHeader({
             setOpen={(value) => setMenu(value ? "products" : null)}
             active={pathname.startsWith("/products")}
           />
-          <NavLink
-            href="/manufacturing"
-            label="Manufacturing"
-            pathname={pathname}
-          />
-          <NavLink href="/projects" label="Projects" pathname={pathname} />
-          <NavLink href="/gallery" label="Gallery" pathname={pathname} />
+          {primaryMiddle.map(([label, href]) => (
+            <NavLink key={href} href={href} label={label} pathname={pathname} />
+          ))}
           <DesktopMenu
             label="Solutions"
             links={solutionLinks}
@@ -289,7 +290,7 @@ export default function SiteHeader({
               </SheetTitle>
             </SheetHeader>
             <nav aria-label="Mobile navigation">
-              {primary.slice(0, 3).map(([label, href]) => (
+              {primaryStart.map(([label, href]) => (
                 <MobileLink
                   key={href}
                   href={href}
@@ -320,7 +321,7 @@ export default function SiteHeader({
                   ))}
                 </div>
               )}
-              {primary.slice(3, 6).map(([label, href]) => (
+              {primaryMiddle.map(([label, href]) => (
                 <MobileLink
                   key={href}
                   href={href}
@@ -351,7 +352,7 @@ export default function SiteHeader({
                   ))}
                 </div>
               )}
-              {primary.slice(6).map(([label, href]) => (
+              {primaryEnd.map(([label, href]) => (
                 <MobileLink
                   key={href}
                   href={href}

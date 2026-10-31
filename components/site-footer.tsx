@@ -9,7 +9,7 @@ const groups = [
     title: "Company",
     links: [
       ["About Us", "/about"],
-      ["Manufacturing", "/manufacturing"],
+      ["Quality Systems", "/quality"],
       ["Sustainability", "/sustainability"],
     ],
   },
@@ -38,7 +38,7 @@ const groups = [
       ["Request Quote", "/quote"],
       ["Contact", "/contact"],
       ["Find a Module", "/module-recommender"],
-      ["Projects", "/projects"],
+      ["Events", "/events"],
     ],
   },
 ];

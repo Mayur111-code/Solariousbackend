@@ -28,17 +28,33 @@ test("retired Technology route is a permanent redirect and is absent from naviga
   assert.doesNotMatch(sitemap, /\/technology/);
 });
 test("CMS and public pages share database-backed settings with safe defaults", async () => {
-  const [server, about, manufacturing, contact] = await Promise.all([
+  const [server, about, contact] = await Promise.all([
     read("backend/server.mjs"),
     read("app/about/page.tsx"),
-    read("app/manufacturing/page.tsx"),
     read("app/contact/page.tsx"),
   ]);
   assert.match(server, /\/api\/site-settings\/:key/);
   assert.match(server, /\/api\/admin\/locations/);
   assert.match(about, /getAboutCms/);
-  assert.match(manufacturing, /getManufacturingCms/);
   assert.match(contact, /getLocations/);
+});
+test("retired Manufacturing and Projects routes redirect instead of 404ing", async () => {
+  const [manufacturing, projects, header, footer, sitemap] = await Promise.all([
+    read("app/manufacturing/page.tsx"),
+    read("app/projects/page.tsx"),
+    read("components/site-header.tsx"),
+    read("components/site-footer.tsx"),
+    read("app/sitemap.ts"),
+  ]);
+  // Old URLs stay alive as permanent redirects so inbound links never break.
+  assert.match(manufacturing, /permanentRedirect\("\/quality"\)/);
+  assert.match(projects, /permanentRedirect\("\/gallery"\)/);
+  for (const source of [header, footer]) {
+    assert.doesNotMatch(source, /href="\/manufacturing"/);
+    assert.doesNotMatch(source, /href="\/projects"/);
+  }
+  assert.doesNotMatch(sitemap, /"\/manufacturing"/);
+  assert.doesNotMatch(sitemap, /"\/projects"/);
 });
 test("product fallbacks receive the same datasheet enrichment as database products", async () => {
   const loader = await read("lib/site-products.ts");

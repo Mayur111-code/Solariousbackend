@@ -46,7 +46,7 @@ test("the About Us team is a responsive grid with all published member details",
   assert.match(css, /prefers-reduced-motion: reduce/);
 });
 
-test("public and admin document cards use thumbnails, metadata and forced downloads", async () => {
+test("public document cards preview only; admin cards keep thumbnails, metadata and downloads", async () => {
   const [documents, viewer, admin, css, server, helper] = await Promise.all([
     read("components/company-documents-section.tsx"),
     read("components/document-preview-modal.tsx"),
@@ -58,12 +58,18 @@ test("public and admin document cards use thumbnails, metadata and forced downlo
   assert.match(documents, /Company Documents &amp; Certifications/);
   assert.match(documents, /initialResources/);
   assert.match(documents, /\/api\/resources\/\$\{item\.id\}\/file/);
-  assert.match(documents, /download=\{item\.file_name\}/);
+  // About Us reference documents are preview-only: no download affordance and
+  // no direct download URL may be rendered in the public gallery.
+  assert.doesNotMatch(documents, /download=\{/);
+  assert.doesNotMatch(documents, /<Download\b/);
+  assert.match(documents, /allowDownload=\{false\}/);
   assert.match(documents, /onError=\{\(\) => setFailed\(true\)\}/);
   assert.match(documents, /item\.issueDate/);
   assert.match(documents, /item\.issuingOrganization/);
   assert.match(documents, /className="doc-thumb/);
   assert.match(viewer, /download=\{document\.fileName\}/);
+  assert.match(viewer, /allowDownload\?: boolean/);
+  assert.match(viewer, /allowDownload \? document\.downloadUrl/);
   assert.match(viewer, /rel="noopener noreferrer"/);
   assert.match(viewer, /aria-modal="true"/);
   assert.match(admin, /admin-resource-thumb-cell/);

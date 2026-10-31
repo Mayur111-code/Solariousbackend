@@ -39,8 +39,15 @@ test("the client mirrors the high-priority tier set used for escalation", async 
 });
 
 test("the quote page renders the RFQ wizard and submits to the RFQ endpoint", async () => {
-  const [page, wizard] = await Promise.all([read("app/quote/page.tsx"), read("components/rfq-wizard.tsx")]);
-  assert.match(page, /RfqWizard/);
+  const [page, experience, wizard] = await Promise.all([
+    read("app/quote/page.tsx"),
+    read("components/quote-experience.tsx"),
+    read("components/rfq-wizard.tsx"),
+  ]);
+  // One page, two entry points: the unified enquiry form and the commercial RFQ.
+  assert.match(page, /QuoteExperience/);
+  assert.match(experience, /RfqWizard/);
+  assert.match(experience, /QuotePopupForm/);
   assert.doesNotMatch(page, /QuoteWizard/, "the legacy free-text wizard must not be used for procurement");
   assert.match(wizard, /fetch\("\/api\/rfqs"/);
   assert.match(wizard, /Idempotency-Key/);

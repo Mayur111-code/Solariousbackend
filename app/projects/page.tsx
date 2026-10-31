@@ -1,13 +1,12 @@
-import type { Metadata } from "next";
-import SectionPage from "@/components/section-page";
-import { PUBLIC_HERO_PRESETS } from "@/lib/public-hero";
-import { pageContent } from "@/data/site";
+import { permanentRedirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Solar Project Applications",
-  description: "Explore Solarious module application categories for rooftop, industrial and utility solar projects.",
-};
-
+/**
+ * The projects page was withdrawn from the public navigation.
+ *
+ * Project photography continues to be published through the admin-managed
+ * gallery, so the old route redirects there permanently instead of returning a
+ * 404. No project images or records are deleted.
+ */
 export default function Page() {
-  return <SectionPage content={pageContent.projects} {...PUBLIC_HERO_PRESETS.projects} />;
+  permanentRedirect("/gallery");
 }

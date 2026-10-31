@@ -43,10 +43,10 @@
 .compliance-summary dl{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0}
 .compliance-summary dl>div{padding:18px;border:1px solid var(--line,#dfe4e0);border-radius:12px;background:#fff;text-align:center}
 .compliance-summary dt{color:#6b7671;font-size:.7rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
-.compliance-summary dd{margin:6px 0 0;font-family:Georgia,serif;font-size:1.9rem;color:#0f2b46}
+.compliance-summary dd{margin:6px 0 0;font-family:Georgia,serif;font-size:1.9rem;color:#061b36}
 .certification-groups{display:grid;gap:26px}
 .certification-group{padding:26px;border:1px solid var(--line,#dfe4e0);border-radius:16px;background:#fff}
-.certification-group>header h3{margin:0;font-family:Georgia,serif;font-size:1.45rem;font-weight:400;color:#0f2b46}
+.certification-group>header h3{margin:0;font-family:Georgia,serif;font-size:1.45rem;font-weight:400;color:#061b36}
 .certification-group>header p{margin:6px 0 0;color:#5c6761;font-size:.86rem}
 .certification-records{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:20px}
 .certification-card{padding:18px;border:1px solid #e6ebe7;border-radius:12px;background:#fbfcfb}
@@ -66,7 +66,7 @@
 .certification-document{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:9px 12px;border:1px solid #cfe0d6;border-radius:8px;background:#fff;color:#1f5e42;font-size:.8rem;font-weight:800;text-decoration:none}
 .certification-document:hover{background:#f2faf5}
 .certification-pending{display:inline-flex;align-items:center;gap:7px;margin-top:14px!important;color:#8a5a1e!important;font-size:.76rem!important;font-weight:700}
-.compliance-cta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:24px;padding:32px;border:1px solid var(--line,#dfe4e0);border-radius:16px;background:#0f2b46;color:#fff}
+.compliance-cta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:24px;padding:32px;border:1px solid var(--line,#dfe4e0);border-radius:16px;background:#061b36;color:#fff}
 .compliance-cta h2{margin:0 0 10px;font-family:Georgia,serif;font-size:clamp(1.5rem,2.6vw,2.1rem);font-weight:400}
 .compliance-cta p{max-width:60ch;margin:0;color:#c9d8e6;font-size:.88rem;line-height:1.7}
 .compliance-cta-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
@@ -74,7 +74,7 @@
 .visually-hidden{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
 /* --- Homepage metric band (additive) ------------------------------------ */
-.metric-band{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:0;background:#0f2b46;color:#fff}
+.metric-band{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:0;background:#061b36;color:#fff}
 .metric-band>div{padding:34px 26px;border-right:1px solid rgba(255,255,255,.12)}
 .metric-band>div:last-child{border-right:0}
 .metric-band dt{color:#f0b27a;font-size:.7rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase}

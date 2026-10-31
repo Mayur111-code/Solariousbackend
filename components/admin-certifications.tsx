@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BadgeCheck, FileText, Plus, Save, ShieldAlert, Star, Trash2 } from "lucide-react";
+import { BadgeCheck, FileText, ImageUp, Plus, Save, ShieldAlert, Star, Trash2, X } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
 import { apiError } from "@/lib/api-error";
 import {
@@ -18,6 +18,8 @@ type Certification = {
   name: string;
   category: string;
   standards: string[];
+  issuingAuthority: string;
+  description: string;
   scope: string;
   auditRelevance: string;
   certificateNumber: string;
@@ -27,6 +29,7 @@ type Certification = {
   expiresAt?: string;
   published: boolean;
   displayOrder: number;
+  logoUrl?: string;
 };
 
 type Document = { id: string; title: string; file_name?: string; category?: string };
@@ -36,6 +39,8 @@ const empty = {
   name: "",
   category: "bis",
   standards: "",
+  issuingAuthority: "",
+  description: "",
   scope: "",
   auditRelevance: "",
   certificateNumber: "",
@@ -54,6 +59,8 @@ const toForm = (item: Certification): Form => ({
   name: item.name,
   category: item.category,
   standards: (item.standards || []).join(", "),
+  issuingAuthority: item.issuingAuthority || "",
+  description: item.description || "",
   scope: item.scope || "",
   auditRelevance: item.auditRelevance || "",
   certificateNumber: item.certificateNumber || "",
@@ -78,6 +85,9 @@ export default function AdminCertifications() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Certification | null>(null);
+  const [logoUrl, setLogoUrl] = useState("");
+  const [logoProgress, setLogoProgress] = useState<number | null>(null);
+  const [logoError, setLogoError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -124,6 +134,87 @@ export default function AdminCertifications() {
     setForm(empty);
     setEditing(null);
     setFields({});
+    setLogoUrl("");
+    setLogoProgress(null);
+    setLogoError("");
+  }
+
+  function startEdit(item: Certification) {
+    setEditing(item.id);
+    setForm(toForm(item));
+    setFields({});
+    setLogoUrl(item.logoUrl || "");
+    setLogoError("");
+    setLogoProgress(null);
+  }
+
+  /**
+   * Uploads the issuer mark with a real byte-level progress bar. XMLHttpRequest
+   * is used because fetch cannot report upload progress in browsers.
+   */
+  function uploadLogo(file: File) {
+    if (!editing) {
+      setLogoError("Save the certification first, then upload its logo.");
+      return;
+    }
+    if (!/^image\/(png|jpeg|webp)$/i.test(file.type)) {
+      setLogoError("Use a PNG, JPEG or WebP image.");
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setLogoError("The logo must be 4 MB or smaller.");
+      return;
+    }
+    setLogoError("");
+    setLogoProgress(0);
+    const body = new FormData();
+    body.append("logo", file);
+    const request = new XMLHttpRequest();
+    request.open("POST", `/api/admin/certifications/${editing}/logo`);
+    request.withCredentials = true;
+    request.upload.onprogress = (event) => {
+      if (event.lengthComputable) setLogoProgress(Math.round((event.loaded / event.total) * 100));
+    };
+    request.onload = () => {
+      setLogoProgress(null);
+      if (request.status >= 200 && request.status < 300) {
+        try {
+          const payload = JSON.parse(request.responseText || "{}");
+          setLogoUrl(payload.logoUrl || "");
+        } catch {
+          setLogoUrl("");
+        }
+        setNotice("Certification logo uploaded.");
+        void load();
+      } else {
+        let message = "The logo could not be uploaded.";
+        try {
+          const payload = JSON.parse(request.responseText || "{}");
+          message = payload.error?.message || payload.error || message;
+        } catch {
+          /* keep the generic message */
+        }
+        setLogoError(message);
+      }
+    };
+    request.onerror = () => {
+      setLogoProgress(null);
+      setLogoError("The upload failed. Check the connection and try again.");
+    };
+    request.send(body);
+  }
+
+  async function removeLogo() {
+    if (!editing) return;
+    setLogoError("");
+    const response = await adminFetch(`/api/admin/certifications/${editing}/logo`, { method: "DELETE" });
+    if (response.ok) {
+      setLogoUrl("");
+      setNotice("Certification logo removed.");
+      await load();
+    } else {
+      setLogoError((await apiError(response, "The logo could not be removed")).message);
+    }
   }
 
   async function save() {
@@ -238,6 +329,24 @@ export default function AdminCertifications() {
             <input value={form.standards} onChange={(event) => set("standards", event.target.value)} aria-invalid={Boolean(fields.standards)} />
             {fields.standards ? <span className="field-error">{fields.standards}</span> : null}
           </label>
+          <label>
+            Issuing authority
+            <input
+              value={form.issuingAuthority}
+              onChange={(event) => set("issuingAuthority", event.target.value)}
+              placeholder="e.g. Bureau of Indian Standards"
+            />
+            <span className="field-hint">Shown publicly with the certification.</span>
+          </label>
+          <label>
+            Display order
+            <input type="number" min={0} value={form.displayOrder} onChange={(event) => set("displayOrder", Number(event.target.value) || 0)} />
+            <span className="field-hint">Lower numbers appear first within a category.</span>
+          </label>
+          <label className="full">
+            Description
+            <textarea rows={3} value={form.description} onChange={(event) => set("description", event.target.value)} />
+          </label>
           <label className="full">
             Certificate document
             <select value={form.documentResourceId} onChange={(event) => set("documentResourceId", event.target.value)}>
@@ -249,14 +358,52 @@ export default function AdminCertifications() {
             <span className="field-hint">Upload PDFs in the Resources module first, then link them here.</span>
             {fields.documentResourceId ? <span className="field-error">{fields.documentResourceId}</span> : null}
           </label>
+          <div className="cert-logo-field">
+            <span className="cert-logo-label">Certification logo / issuer mark</span>
+            <div className="cert-logo-row">
+              <div className="cert-logo-preview" data-empty={logoUrl ? "false" : "true"}>
+                {logoUrl ? (
+                  // Admin-only preview of an uploaded Cloudinary asset.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt="" />
+                ) : (
+                  <FileText size={22} aria-hidden="true" />
+                )}
+              </div>
+              <div className="cert-logo-controls">
+                <label className="cert-logo-upload">
+                  <ImageUp size={15} aria-hidden="true" />
+                  {logoUrl ? "Replace logo" : "Upload logo"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) uploadLogo(file);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                {logoUrl ? (
+                  <button type="button" className="cert-logo-remove" onClick={() => void removeLogo()}>
+                    <X size={14} aria-hidden="true" /> Remove
+                  </button>
+                ) : null}
+                <small>{editing ? "PNG, JPEG or WebP · up to 4 MB" : "Save the record first to upload a logo"}</small>
+              </div>
+            </div>
+            {logoProgress !== null ? (
+              <div className="cert-logo-progress" role="status" aria-live="polite">
+                <span style={{ width: `${logoProgress}%` }} />
+                <small>Uploading… {logoProgress}%</small>
+              </div>
+            ) : null}
+            {logoError ? <span className="field-error">{logoError}</span> : null}
+          </div>
           <label>
             Certificate number
             <input value={form.certificateNumber} onChange={(event) => set("certificateNumber", event.target.value)} />
             <span className="field-hint">Only shown publicly when the record is verified.</span>
-          </label>
-          <label>
-            Display order
-            <input type="number" min={0} value={form.displayOrder} onChange={(event) => set("displayOrder", Number(event.target.value) || 0)} />
           </label>
           <label>
             Issued on
@@ -314,14 +461,27 @@ export default function AdminCertifications() {
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id}>
-                    <td><strong>{item.name}</strong><small>{item.certificateNumber || item.code || "—"}</small></td>
+                    <td>
+                      <div className="cert-row-name">
+                        {item.logoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.logoUrl} alt="" />
+                        ) : (
+                          <span className="cert-row-placeholder" aria-hidden="true"><BadgeCheck /></span>
+                        )}
+                        <div>
+                          <strong>{item.name}</strong>
+                          <small>{item.certificateNumber || item.code || "—"}</small>
+                        </div>
+                      </div>
+                    </td>
                     <td>{categories.find((category) => category.id === item.category)?.label || item.category}</td>
                     <td><small>{(item.standards || []).join(", ")}</small></td>
                     <td><AdminStatusBadge status={item.verificationStatus} /></td>
                     <td>{item.published ? "Yes" : "No"}</td>
                     <td>
                       <div className="enterprise-row-actions">
-                        <button type="button" onClick={() => { setEditing(item.id); setForm(toForm(item)); setFields({}); }}>Edit</button>
+                        <button type="button" onClick={() => startEdit(item)}>Edit</button>
                         <button type="button" className="danger" onClick={() => setDeleteTarget(item)} aria-label={`Delete ${item.name}`}><Trash2 /></button>
                       </div>
                     </td>

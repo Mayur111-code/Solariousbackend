@@ -8,16 +8,21 @@ export type DocumentPreview = {
   title: string;
   fileName: string;
   fileType: string;
+  /** Inline preview stream (never a direct file download). */
   previewUrl: string;
+  /** Omitted when the public section is preview-only. */
   downloadUrl?: string;
 };
 
 export default function DocumentPreviewModal({
   document,
   onClose,
+  allowDownload = true,
 }: {
   document: DocumentPreview | null;
   onClose: () => void;
+  /** Public reference documents are preview-only: no download affordance. */
+  allowDownload?: boolean;
 }) {
   const closeButton = useRef<HTMLButtonElement>(null);
 
@@ -43,7 +48,7 @@ export default function DocumentPreviewModal({
   const inlineImage = ["image/jpeg", "image/png", "image/webp"].includes(
     document.fileType,
   );
-  const downloadUrl = document.downloadUrl || document.previewUrl;
+  const downloadUrl = allowDownload ? document.downloadUrl || document.previewUrl : "";
 
   return (
     <div className="document-viewer-backdrop" onMouseDown={onClose}>
@@ -80,7 +85,7 @@ export default function DocumentPreviewModal({
               <div className="document-viewer-fallback">
                 <FileText size={42} aria-hidden="true" />
                 <h3>This browser cannot display the PDF inline.</h3>
-                <p>Open the document in a new tab or download it instead.</p>
+                <p>Open the document in a new tab to view it.</p>
               </div>
             </object>
           ) : inlineImage ? (
@@ -91,7 +96,7 @@ export default function DocumentPreviewModal({
             <div className="document-viewer-fallback">
               <FileText size={48} aria-hidden="true" />
               <h3>Preview is not available for this file type.</h3>
-              <p>Use the open or download action to view it in a compatible application.</p>
+              <p>Open the document in a new tab to view it in a compatible application.</p>
             </div>
           )}
         </div>
@@ -99,14 +104,16 @@ export default function DocumentPreviewModal({
           <a href={document.previewUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink size={16} aria-hidden="true" /> Open in new tab
           </a>
-          <a
-            className="primary"
-            href={downloadUrl}
-            download={document.fileName}
-            aria-label={`Download ${document.title}`}
-          >
-            <Download size={16} aria-hidden="true" /> Download
-          </a>
+          {downloadUrl ? (
+            <a
+              className="primary"
+              href={downloadUrl}
+              download={document.fileName}
+              aria-label={`Download ${document.title}`}
+            >
+              <Download size={16} aria-hidden="true" /> Download
+            </a>
+          ) : null}
         </footer>
       </section>
     </div>

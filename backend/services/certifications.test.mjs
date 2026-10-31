@@ -108,3 +108,28 @@ test("stats separate verified, pending and expired records", () => {
   ]);
   assert.deepEqual(stats, { total: 2, published: 1, verified: 1, pending: 1, expired: 1 });
 });
+
+test("issuing authority and description are validated and published with the record", () => {
+  const { values, errors } = validateCertification({
+    ...base(),
+    issuingAuthority: "  Bureau of Indian Standards  ",
+    description: "Crystalline silicon terrestrial photovoltaic modules.",
+  });
+  assert.deepEqual(errors, {});
+  assert.equal(values.issuingAuthority, "Bureau of Indian Standards");
+
+  const published = publicCertification({
+    ...base(),
+    issuingAuthority: values.issuingAuthority,
+    description: values.description,
+  });
+  assert.equal(published.issuingAuthority, "Bureau of Indian Standards");
+  assert.match(published.description, /photovoltaic modules/);
+  // The issuer mark is a brand asset and is published as-is.
+  assert.equal(publicCertification({ ...base(), logoUrl: "https://res.cloudinary.com/demo/cert.png" }).logoUrl, "https://res.cloudinary.com/demo/cert.png");
+});
+
+test("long issuer text is clipped instead of being stored unbounded", () => {
+  const { values } = validateCertification({ ...base(), issuingAuthority: "A".repeat(400) });
+  assert.equal(values.issuingAuthority.length, 160);
+});
