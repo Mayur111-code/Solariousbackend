@@ -2,60 +2,1027 @@
 /* eslint-disable @next/next/no-img-element */
 import { adminFetch } from "@/lib/admin-fetch";
 import { apiError } from "@/lib/api-error";
-import { useCallback, useEffect, useState } from "react";
-import { Copy, Download, Eye, ImagePlus, Loader2, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Check,
+  Copy,
+  Download,
+  Eye,
+  ImagePlus,
+  Loader2,
+  Pencil,
+  RefreshCw,
+  Send,
+  ShieldCheck,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
+import {
+  ALL_CREATIVE_CATEGORIES,
+  ASPECT_RATIOS,
+  AUDIENCE_HINTS,
+  FESTIVAL_CATEGORY,
+  FESTIVAL_OCCASIONS,
+  LANGUAGES,
+  PLATFORMS,
+  REVIEW_STATUSES,
+  type ReviewStatus,
+} from "@/lib/creative-options";
 
-type Creative={id:string;creative_date:string;occasion?:string;campaign_type:string;headline:string;caption:string;cta:string;hashtags:string;image_url:string;status:string;failure_code:string;error_summary?:string;aspect_ratio?:string;language?:string;generation_stage?:string};
-type Settings={company_name:string;email:string;mobile:string;website:string;default_cta:string;logo_url?:string;show_email:number;show_mobile:number;show_website:number};
-const occasions=["Republic Day","Independence Day","Gandhi Jayanti","Diwali","Dussehra","Ganesh Chaturthi","Holi","Gudi Padwa","Makar Sankranti","Raksha Bandhan","Christmas","New Year","Maharashtra Day","Labour Day","Company Anniversary","Custom Occasion"];
-const creativeTypes=["Festival","Residential Solar","Commercial Solar","Industrial Solar","Electricity Savings","Awareness","Product Promo"];
-const stages=["preparing","generating","branding","uploading","saving","completed"];
-const initial={mode:"Festival",creativeType:"Festival",occasion:"Diwali",customOccasion:"",year:new Date().getFullYear(),solarTheme:"High-efficiency solar power for a brighter future",objective:"Brand awareness and customer engagement",style:"Premium photorealistic",aspectRatio:"1:1",language:"English",headline:"Warm wishes from Solarious Energy",caption:"Celebrate progress powered by clean, dependable solar energy.",cta:"Contact Us Today",hashtags:"#SolariousEnergy #CleanEnergy",logoPlacement:"top-left",customPrompt:"",fontSize:58,color:"#ffffff",alignment:"middle",position:68};
+type Creative = {
+  id: string;
+  creative_date: string;
+  campaign_type: string;
+  campaign_category: string;
+  campaign_title: string;
+  audience: string;
+  purpose: string;
+  platform: string;
+  review_status: ReviewStatus;
+  library_saved: boolean;
+  favourite: boolean;
+  occasion?: string;
+  headline: string;
+  caption: string;
+  cta: string;
+  hashtags: string;
+  image_url: string;
+  status: string;
+  failure_code: string;
+  error_summary?: string;
+  aspect_ratio?: string;
+  language?: string;
+  generation_stage?: string;
+};
+type Settings = {
+  company_name: string;
+  email: string;
+  mobile: string;
+  website: string;
+  default_cta: string;
+  logo_url?: string;
+  show_email: number;
+  show_mobile: number;
+  show_website: number;
+};
+type Workflow = {
+  enabled: boolean;
+  dailyTarget: number;
+  categories: string[];
+  language: string;
+  platform: string;
+  lastRunAt?: string | null;
+  lastRunDate?: string;
+};
+type FilterState = {
+  category: string;
+  platform: string;
+  review: string;
+  saved: boolean;
+  from: string;
+  to: string;
+  query: string;
+};
 
-export default function AdminAiCreatives(){
- const[settings,setSettings]=useState<Settings|null>(null),[items,setItems]=useState<Creative[]>([]),[form,setForm]=useState(initial),[busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[error,setError]=useState(""),[stage,setStage]=useState(""),[preview,setPreview]=useState<Creative|null>(null);
- const load=useCallback(async()=>{try{const[a,b]=await Promise.all([adminFetch("/api/admin/creative-settings"),adminFetch("/api/admin/creatives")]);if(!a.ok)throw await apiError(a,"Creative settings could not be loaded");if(!b.ok)throw await apiError(b,"Creative history could not be loaded");const[sa,cb]=await Promise.all([a.json(),b.json()]);setSettings(sa.settings);setItems(cb.creatives||[])}catch(e){setError(e instanceof Error?e.message:"Creative workspace could not be loaded.")}},[]);
- useEffect(()=>{const timer=window.setTimeout(()=>void load(),0);return()=>window.clearTimeout(timer)},[load]);
- const generate=async()=>{setBusy(true);setError("");setNotice("");setStage("preparing");const key=crypto.randomUUID().replaceAll("-","_");let stopped=false;let timer:number|undefined;const poll=async()=>{if(stopped)return;try{const response=await adminFetch(`/api/admin/creative-generations/${key}`);if(response.status===401||response.status===403){stopped=true;return}if(response.ok){const data=await response.json();const generation=data.generation||{};setStage(generation.stage||"preparing");if(generation.status==="completed"||generation.status==="failed"){stopped=true;return}}}catch{/* Keep generation alive; the final POST response remains authoritative. */}if(!stopped)timer=window.setTimeout(()=>void poll(),900)};try{const request=adminFetch("/api/admin/creatives/festival",{method:"POST",headers:{"Content-Type":"application/json","Idempotency-Key":key},body:JSON.stringify({...form,textConfig:{fontSize:form.fontSize,color:form.color,alignment:form.alignment,position:form.position,logoPlacement:form.logoPlacement}})});void poll();const response=await request;const body=await response.json().catch(()=>({}));if(!response.ok){const detail=body?.error;const suffix=detail?.requestId?` Request ID: ${detail.requestId}`:"";throw new Error(`${detail?.message||body?.error||"Creative generation failed."}${suffix}`)}setStage("completed");setNotice("Creative generated, branded, uploaded and saved successfully.");await load();if(body.creative)setPreview(body.creative)}catch(e){setStage("failed");setError(e instanceof Error?e.message:"Creative generation failed.")}finally{stopped=true;if(timer!==undefined)window.clearTimeout(timer);setBusy(false)}};
- const remove=async(item:Creative)=>{if(!confirm(`Delete “${item.headline}”?`))return;const r=await adminFetch(`/api/admin/creatives?id=${item.id}`,{method:"DELETE"});if(r.ok){setItems(x=>x.filter(y=>y.id!==item.id));setNotice("Creative deleted.")}else setError((await apiError(r,"Creative could not be deleted")).message)};
- const updateCaption=async(item:Creative)=>{const caption=prompt("Edit caption",item.caption);if(caption===null)return;const r=await adminFetch("/api/admin/creatives",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,caption})});if(r.ok){setNotice("Caption updated.");await load()}else setError((await apiError(r,"Caption could not be updated")).message)};
- const regenerate=async(item:Creative)=>{if(busy)return;setBusy(true);setError("");setNotice("");try{const r=await adminFetch(`/api/admin/creatives/${item.id}/regenerate`,{method:"POST"});const body=await r.json().catch(()=>({}));if(!r.ok)throw new Error(body?.error?.message||body?.error||"Creative could not be regenerated.");setNotice("Creative regenerated, uploaded and saved successfully.");await load();if(body.creative)setPreview(body.creative)}catch(e){setError(e instanceof Error?e.message:"Creative could not be regenerated.")}finally{setBusy(false)}};
- const share=(item:Creative)=>window.open(`https://wa.me/?text=${encodeURIComponent([item.headline,item.caption,item.cta,item.hashtags,item.image_url].filter(Boolean).join("\n\n"))}`,"_blank","noopener,noreferrer");
- const saveSettings=async(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();if(!settings)return;setBusy(true);const data=new FormData(e.currentTarget);const r=await adminFetch("/api/admin/creative-settings",{method:"POST",body:data});setBusy(false);if(r.ok){setNotice("Brand settings saved.");await load()}else setError((await apiError(r,"Brand settings could not be saved")).message)};
- return <section className="admin-panel creative-workspace">
-  <header className="creative-header"><div><span>Solarious Studio</span><h2>AI Creative Generator</h2><p>Generate real solar marketing artwork, apply approved branding, and manage every saved creative.</p></div><button className="button button-ghost" onClick={()=>void load()} disabled={busy}><RefreshCw size={16}/>Refresh</button></header>
-  {(notice||error)&&<div className={error?"creative-alert error":"creative-alert success"} role="status">{error||notice}</div>}
-  <div className="creative-builder">
-   <div className="creative-form-card"><h3>Creative brief</h3><div className="creative-form-grid">
-    <label>Generation mode<select value={form.mode} onChange={e=>{const mode=e.target.value;setForm({...form,mode,creativeType:mode==="Festival"?"Festival":form.creativeType==="Festival"?"Residential Solar":form.creativeType})}}><option>Daily</option><option>Festival</option></select></label>
-    <label>Creative type<select value={form.creativeType} onChange={e=>setForm({...form,creativeType:e.target.value})}>{creativeTypes.map(x=><option key={x}>{x}</option>)}</select></label>
-    {form.creativeType==="Festival"&&<label>Festival / occasion<select value={form.occasion} onChange={e=>setForm({...form,occasion:e.target.value})}>{occasions.map(x=><option key={x}>{x}</option>)}</select></label>}
-    {form.creativeType==="Festival"&&form.occasion==="Custom Occasion"&&<label>Custom occasion<input value={form.customOccasion} onChange={e=>setForm({...form,customOccasion:e.target.value})}/></label>}
-    <label>Solar theme<input value={form.solarTheme} onChange={e=>setForm({...form,solarTheme:e.target.value})}/></label>
-    <label>Objective<input value={form.objective} onChange={e=>setForm({...form,objective:e.target.value})}/></label>
-    <label>Visual style<select value={form.style} onChange={e=>setForm({...form,style:e.target.value})}><option>Premium photorealistic</option><option>Editorial lifestyle</option><option>Corporate cinematic</option><option>Clean product showcase</option></select></label>
-    <label>Format<select value={form.aspectRatio} onChange={e=>setForm({...form,aspectRatio:e.target.value})}><option value="1:1">Square · 1080 × 1080</option><option value="4:5">Portrait · 1080 × 1350</option><option value="9:16">Story · 1080 × 1920</option><option value="16:9">Landscape · 1920 × 1080</option></select></label>
-    <label>Language<select value={form.language} onChange={e=>setForm({...form,language:e.target.value})}><option>English</option><option>Hindi</option><option>Marathi</option></select></label>
-    <label>Logo placement<select value={form.logoPlacement} onChange={e=>setForm({...form,logoPlacement:e.target.value})}><option value="top-left">Top left</option><option value="top-right">Top right</option></select></label>
-    <label className="full">Headline<input maxLength={100} value={form.headline} onChange={e=>setForm({...form,headline:e.target.value})}/></label>
-    <label className="full">Caption<textarea rows={3} maxLength={180} value={form.caption} onChange={e=>setForm({...form,caption:e.target.value})}/></label>
-    <label>Call to action<input value={form.cta} onChange={e=>setForm({...form,cta:e.target.value})}/></label>
-    <label>Hashtags<input value={form.hashtags} onChange={e=>setForm({...form,hashtags:e.target.value})}/></label>
-    <label className="full">Additional art direction<textarea rows={3} maxLength={800} value={form.customPrompt} onChange={e=>setForm({...form,customPrompt:e.target.value})} placeholder="Optional composition, audience or campaign details"/></label>
-   </div><button className="button creative-generate" disabled={busy||!form.headline.trim()} onClick={()=>void generate()}>{busy?<Loader2 className="spin" size={17}/>:<ImagePlus size={17}/>}Generate creative</button></div>
-   <aside className="creative-progress-card"><span>Secure production pipeline</span><h3>{busy?"Creating your artwork":"Ready to generate"}</h3><p>The base image comes from the configured image provider. Solarious text and logo are applied server-side before Cloudinary storage.</p><ol>{stages.map((x,i)=>{const current=Math.max(0,stages.indexOf(stage));return <li className={stage==="failed"&&i===current?"failed":i<current||stage==="completed"?"done":x===stage?"active":""} key={x}><i>{i+1}</i><span>{x==="preparing"?"Preparing prompt":x==="generating"?"Generating image":x==="branding"?"Applying branding":x==="uploading"?"Uploading to Cloudinary":x==="saving"?"Saving history":"Completed"}</span></li>})}</ol><small>No placeholder artwork or simulated success is used.</small></aside>
-  </div>
-  {settings&&<details className="creative-brand-card"><summary>Brand settings</summary><form onSubmit={saveSettings} className="creative-settings">
-   <label>Company name<input name="companyName" required defaultValue={settings.company_name}/></label><label>Email<input name="email" type="email" required defaultValue={settings.email}/></label><label>Mobile<input name="mobile" defaultValue={settings.mobile}/></label><label>Website<input name="website" defaultValue={settings.website}/></label><label>Default CTA<input name="defaultCta" defaultValue={settings.default_cta}/></label><label>Replace logo<input name="logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif"/></label><input type="hidden" name="showEmail" value="true"/><input type="hidden" name="showMobile" value="true"/><input type="hidden" name="showWebsite" value="true"/><button className="button" disabled={busy}>Save brand settings</button>
-  </form></details>}
-  <div className="creative-history-head"><div><span>Creative library</span><h3>Generation history</h3></div><p>{items.length} saved creative{items.length===1?"":"s"}</p></div>
-  <div className="creative-card-grid">{items.map(item=><article className="creative-card" key={item.id}>
-   <button className="creative-thumb" onClick={()=>item.image_url&&setPreview(item)} disabled={!item.image_url}>{item.image_url?<img src={item.image_url} alt={item.headline}/>:<div><ImagePlus/><span>{item.status==="failed"?"Generation failed":"Image unavailable"}</span></div>}<b>{item.status}</b></button>
-   <div className="creative-card-body"><span>{item.campaign_type} · {item.creative_date}</span><h4>{item.headline}</h4><p>{item.caption}</p>{item.status==="failed"&&<small className="creative-failure">{item.error_summary||item.failure_code}</small>}<div className="creative-card-actions">
-    <button onClick={()=>setPreview(item)} disabled={!item.image_url}><Eye size={15}/>Preview</button><a href={`/api/admin/creatives/${item.id}/download`}><Download size={15}/>Download</a><button onClick={()=>void navigator.clipboard.writeText([item.headline,item.caption,item.cta,item.hashtags].filter(Boolean).join("\n"))}><Copy size={15}/>Copy</button><button onClick={()=>share(item)}><Send size={15}/>WhatsApp</button><button onClick={()=>void regenerate(item)} disabled={busy}><RefreshCw size={15}/>Regenerate</button><button onClick={()=>void updateCaption(item)}>Edit caption</button><button className="danger" onClick={()=>void remove(item)}><Trash2 size={15}/></button>
-   </div></div>
-  </article>)}</div>
-  {!items.length&&<div className="admin-empty">No creative history yet. Generate the first campaign above.</div>}
-  {preview&&preview.image_url&&<div className="creative-modal" role="dialog" aria-modal="true" aria-label="Creative preview"><div><header><span>{preview.campaign_type} · {preview.creative_date}</span><button onClick={()=>setPreview(null)} aria-label="Close preview"><X/></button></header><img src={preview.image_url} alt={preview.headline}/><footer><div><h3>{preview.headline}</h3><p>{preview.caption}</p></div><a className="button" href={`/api/admin/creatives/${preview.id}/download`}><Download size={16}/>Download</a><button className="button button-ghost" onClick={()=>share(preview)}><Send size={16}/>WhatsApp</button></footer></div></div>}
- </section>
+const PURPOSES = [
+  "Brand awareness",
+  "Lead generation",
+  "Product promotion",
+  "Festival greeting",
+  "Customer education",
+  "Event promotion",
+  "Dealer recruitment",
+];
+const STYLES = [
+  "Premium photorealistic",
+  "Editorial lifestyle",
+  "Corporate cinematic",
+  "Clean product showcase",
+];
+const STAGES = ["preparing", "generating", "branding", "uploading", "saving", "completed"];
+const EMPTY_FILTERS: FilterState = {
+  category: "",
+  platform: "",
+  review: "",
+  saved: false,
+  from: "",
+  to: "",
+  query: "",
+};
+
+/** Neutral, claim-free starting headline the admin can edit before generating. */
+const suggestedHeadline = (category: string) =>
+  category === FESTIVAL_CATEGORY
+    ? "Warm wishes from Solarious Energy"
+    : `${category} · Solarious Energy`;
+
+const initialForm = () => ({
+  category: "Residential Solar" as string,
+  campaignTitle: "",
+  audience: AUDIENCE_HINTS["Residential Solar"] || "",
+  purpose: PURPOSES[0],
+  language: "English",
+  platform: "instagram",
+  aspectRatio: "1:1",
+  occasion: "Diwali",
+  customOccasion: "",
+  headline: suggestedHeadline("Residential Solar"),
+  caption: "",
+  cta: "",
+  hashtags: "#SolariousEnergy #CleanEnergy",
+  customPrompt: "",
+  solarTheme: "High-efficiency solar power for a brighter future",
+  objective: "Brand awareness and customer engagement",
+  style: STYLES[0],
+  logoPlacement: "top-left",
+  fontSize: 58,
+  color: "#ffffff",
+  alignment: "middle",
+  position: 68,
+});
+
+export default function AdminAiCreatives() {
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [items, setItems] = useState<Creative[]>([]);
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
+  const [form, setForm] = useState(initialForm);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [stage, setStage] = useState("");
+  const [preview, setPreview] = useState<Creative | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Creative | null>(null);
+  const [draft, setDraft] = useState<Creative | null>(null);
+  const [workflow, setWorkflow] = useState<Workflow | null>(null);
+  const [workflowBusy, setWorkflowBusy] = useState(false);
+
+  const query = useMemo(() => {
+    const params = new URLSearchParams();
+    if (filters.category) params.set("category", filters.category);
+    if (filters.platform) params.set("platform", filters.platform);
+    if (filters.review) params.set("review", filters.review);
+    if (filters.saved) params.set("saved", "true");
+    if (filters.from) params.set("from", filters.from);
+    if (filters.to) params.set("to", filters.to);
+    const value = params.toString();
+    return value ? `?${value}` : "";
+  }, [filters]);
+
+  const load = useCallback(async () => {
+    try {
+      const [settingsResponse, listResponse] = await Promise.all([
+        adminFetch("/api/admin/creative-settings"),
+        adminFetch(`/api/admin/creatives${query}`),
+      ]);
+      if (!settingsResponse.ok) throw await apiError(settingsResponse, "Creative settings could not be loaded");
+      if (!listResponse.ok) throw await apiError(listResponse, "Creative history could not be loaded");
+      const [settingsBody, listBody] = await Promise.all([settingsResponse.json(), listResponse.json()]);
+      setSettings(settingsBody.settings);
+      setItems(listBody.creatives || []);
+      const workflowResponse = await adminFetch("/api/admin/creative-workflow");
+      if (workflowResponse.ok) {
+        const workflowBody = await workflowResponse.json();
+        setWorkflow(workflowBody.settings || null);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Creative workspace could not be loaded.");
+    }
+  }, [query]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
+
+  const visible = useMemo(() => {
+    const term = filters.query.trim().toLowerCase();
+    if (!term) return items;
+    return items.filter(item =>
+      [item.campaign_title, item.headline, item.campaign_category, item.audience]
+        .filter(Boolean)
+        .some(value => String(value).toLowerCase().includes(term))
+    );
+  }, [items, filters.query]);
+
+  const awaitingReview = items.filter(item => item.review_status === "pending").length;
+  const libraryCount = items.filter(item => item.library_saved).length;
+
+  const patch = async (item: Creative, body: Record<string, unknown>, message: string) => {
+    setError("");
+    const response = await adminFetch("/api/admin/creatives", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: item.id, ...body }),
+    });
+    if (!response.ok) {
+      setError((await apiError(response, "The creative could not be updated")).message);
+      return;
+    }
+    setNotice(message);
+    await load();
+  };
+
+  const generate = async () => {
+    if (busy) return;
+    if (!form.headline.trim()) {
+      setError("Add a headline before generating — the studio never invents campaign copy for you.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setNotice("");
+    setStage("preparing");
+    const key = crypto.randomUUID().replaceAll("-", "_");
+    let stopped = false;
+    let timer: number | undefined;
+    const poll = async () => {
+      if (stopped) return;
+      try {
+        const response = await adminFetch(`/api/admin/creative-generations/${key}`);
+        if (response.status === 401 || response.status === 403) {
+          stopped = true;
+          return;
+        }
+        if (response.ok) {
+          const data = await response.json();
+          const generation = data.generation || {};
+          setStage(generation.stage || "preparing");
+          if (generation.status === "completed" || generation.status === "failed") {
+            stopped = true;
+            return;
+          }
+        }
+      } catch {
+        /* The final POST response stays authoritative while polling is best-effort. */
+      }
+      if (!stopped) timer = window.setTimeout(() => void poll(), 900);
+    };
+    try {
+      const request = adminFetch("/api/admin/creatives/festival", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": key },
+        body: JSON.stringify({
+          ...form,
+          campaignCategory: form.category,
+          creativeType: form.category,
+          textConfig: {
+            fontSize: form.fontSize,
+            color: form.color,
+            alignment: form.alignment,
+            position: form.position,
+            logoPlacement: form.logoPlacement,
+          },
+        }),
+      });
+      void poll();
+      const response = await request;
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = body?.error;
+        const suffix = detail?.requestId ? ` Request ID: ${detail.requestId}` : "";
+        throw new Error(`${detail?.message || body?.error || "Creative generation failed."}${suffix}`);
+      }
+      setStage("completed");
+      setNotice("Creative generated, branded, uploaded and saved as a draft awaiting review.");
+      await load();
+      if (body.creative) setPreview(body.creative);
+    } catch (cause) {
+      setStage("failed");
+      setError(cause instanceof Error ? cause.message : "Creative generation failed.");
+    } finally {
+      stopped = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+      setBusy(false);
+    }
+  };
+
+  const remove = async (item: Creative) => {
+    setConfirmDelete(null);
+    const response = await adminFetch(`/api/admin/creatives?id=${item.id}`, { method: "DELETE" });
+    if (response.ok) {
+      setItems(current => current.filter(entry => entry.id !== item.id));
+      setNotice("Creative deleted from the library.");
+      if (preview?.id === item.id) setPreview(null);
+    } else {
+      setError((await apiError(response, "Creative could not be deleted")).message);
+    }
+  };
+
+  const regenerate = async (item: Creative) => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await adminFetch(`/api/admin/creatives/${item.id}/regenerate`, { method: "POST" });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body?.error?.message || body?.error || "Creative could not be regenerated.");
+      setNotice("Creative regenerated, uploaded and saved.");
+      await load();
+      if (body.creative) setPreview(body.creative);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Creative could not be regenerated.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const share = (item: Creative) =>
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(
+        [item.headline, item.caption, item.cta, item.hashtags, item.image_url].filter(Boolean).join("\n\n")
+      )}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+
+  const saveSettings = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!settings) return;
+    setBusy(true);
+    const data = new FormData(event.currentTarget);
+    const response = await adminFetch("/api/admin/creative-settings", { method: "POST", body: data });
+    setBusy(false);
+    if (response.ok) {
+      setNotice("Brand overlay settings saved.");
+      await load();
+    } else {
+      setError((await apiError(response, "Brand settings could not be saved")).message);
+    }
+  };
+
+  const saveWorkflow = async () => {
+    if (!workflow) return;
+    setWorkflowBusy(true);
+    setError("");
+    const response = await adminFetch("/api/admin/creative-workflow", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(workflow),
+    });
+    if (response.ok) {
+      const body = await response.json();
+      setWorkflow(body.settings);
+      setNotice(
+        body.settings.enabled
+          ? "Daily draft workflow enabled. The cron endpoint will create drafts only — nothing is published automatically."
+          : "Daily draft workflow paused."
+      );
+    } else {
+      setError((await apiError(response, "The daily workflow settings could not be saved")).message);
+    }
+    setWorkflowBusy(false);
+  };
+
+  const toggleWorkflowCategory = (category: string) => {
+    if (!workflow) return;
+    const categories = workflow.categories.includes(category)
+      ? workflow.categories.filter(item => item !== category)
+      : [...workflow.categories, category];
+    setWorkflow({ ...workflow, categories });
+  };
+
+  const chooseCategory = (category: string) => {
+    setForm(current => ({
+      ...current,
+      category,
+      audience: AUDIENCE_HINTS[category] || "",
+      headline:
+        current.headline === suggestedHeadline(current.category) || !current.headline
+          ? suggestedHeadline(category)
+          : current.headline,
+    }));
+  };
+
+  return (
+    <section className="admin-panel creative-workspace">
+      <header className="creative-header">
+        <div>
+          <span>Marketing / Generative AI</span>
+          <h2>AI Creative Studio</h2>
+          <p>
+            Generate on-brand solar artwork for every campaign family, review it, and keep
+            an auditable library. Every creative starts as a draft awaiting review.
+          </p>
+        </div>
+        <button className="button button-ghost" onClick={() => void load()} disabled={busy}>
+          <RefreshCw size={16} />
+          Refresh
+        </button>
+      </header>
+
+      {(notice || error) && (
+        <div className={error ? "creative-alert error" : "creative-alert success"} role="status">
+          {error || notice}
+        </div>
+      )}
+
+      <div className="studio-stats">
+        <div>
+          <strong>{items.length}</strong>
+          <span>Creatives in view</span>
+        </div>
+        <div>
+          <strong>{awaitingReview}</strong>
+          <span>Awaiting review</span>
+        </div>
+        <div>
+          <strong>{libraryCount}</strong>
+          <span>Saved to library</span>
+        </div>
+        <div>
+          <strong>{items.filter(item => item.status === "failed").length}</strong>
+          <span>Provider failures</span>
+        </div>
+      </div>
+
+      <div className="creative-builder">
+        <div className="creative-form-card">
+          <h3>Campaign brief</h3>
+          <div className="creative-form-grid">
+            <label>
+              Creative category
+              <select value={form.category} onChange={event => chooseCategory(event.target.value)}>
+                {ALL_CREATIVE_CATEGORIES.map(category => (
+                  <option key={category}>{category}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Campaign title
+              <input
+                maxLength={120}
+                value={form.campaignTitle}
+                onChange={event => setForm({ ...form, campaignTitle: event.target.value })}
+                placeholder="e.g. Monsoon rooftop campaign"
+              />
+            </label>
+            <label>
+              Target audience
+              <input
+                maxLength={160}
+                value={form.audience}
+                onChange={event => setForm({ ...form, audience: event.target.value })}
+                placeholder="e.g. Housing societies in Nashik"
+              />
+            </label>
+            <label>
+              Creative purpose
+              <input
+                list="creative-purposes"
+                maxLength={160}
+                value={form.purpose}
+                onChange={event => setForm({ ...form, purpose: event.target.value })}
+              />
+              <datalist id="creative-purposes">
+                {PURPOSES.map(purpose => (
+                  <option key={purpose} value={purpose} />
+                ))}
+              </datalist>
+            </label>
+            {form.category === FESTIVAL_CATEGORY && (
+              <label>
+                Festival / occasion
+                <select value={form.occasion} onChange={event => setForm({ ...form, occasion: event.target.value })}>
+                  {FESTIVAL_OCCASIONS.map(occasion => (
+                    <option key={occasion}>{occasion}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {form.category === FESTIVAL_CATEGORY && form.occasion === "Custom Occasion" && (
+              <label>
+                Custom occasion
+                <input
+                  value={form.customOccasion}
+                  onChange={event => setForm({ ...form, customOccasion: event.target.value })}
+                />
+              </label>
+            )}
+            <label>
+              Language
+              <select value={form.language} onChange={event => setForm({ ...form, language: event.target.value })}>
+                {LANGUAGES.map(language => (
+                  <option key={language}>{language}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Platform
+              <select value={form.platform} onChange={event => setForm({ ...form, platform: event.target.value })}>
+                {PLATFORMS.map(platform => (
+                  <option key={platform.id} value={platform.id}>
+                    {platform.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Aspect ratio
+              <select
+                value={form.aspectRatio}
+                onChange={event => setForm({ ...form, aspectRatio: event.target.value })}
+              >
+                {ASPECT_RATIOS.map(ratio => (
+                  <option key={ratio.id} value={ratio.id}>
+                    {ratio.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="full">
+              Headline (rendered on the creative)
+              <input maxLength={100} value={form.headline} onChange={event => setForm({ ...form, headline: event.target.value })} />
+            </label>
+            <label className="full">
+              Caption
+              <textarea
+                rows={2}
+                maxLength={180}
+                value={form.caption}
+                onChange={event => setForm({ ...form, caption: event.target.value })}
+                placeholder="Leave blank to use the configured default greeting"
+              />
+            </label>
+            <label className="full">
+              Custom instructions for the image model
+              <textarea
+                rows={3}
+                maxLength={800}
+                value={form.customPrompt}
+                onChange={event => setForm({ ...form, customPrompt: event.target.value })}
+                placeholder="Composition, setting, lighting. Never include invented prices, certifications or specifications."
+              />
+            </label>
+          </div>
+          <details className="studio-advanced">
+            <summary>Advanced image direction</summary>
+            <div className="creative-form-grid">
+              <label>
+                Solar theme
+                <input value={form.solarTheme} onChange={event => setForm({ ...form, solarTheme: event.target.value })} />
+              </label>
+              <label>
+                Objective
+                <input value={form.objective} onChange={event => setForm({ ...form, objective: event.target.value })} />
+              </label>
+              <label>
+                Visual style
+                <select value={form.style} onChange={event => setForm({ ...form, style: event.target.value })}>
+                  {STYLES.map(style => (
+                    <option key={style}>{style}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Logo placement
+                <select
+                  value={form.logoPlacement}
+                  onChange={event => setForm({ ...form, logoPlacement: event.target.value })}
+                >
+                  <option value="top-left">Top left</option>
+                  <option value="top-right">Top right</option>
+                </select>
+              </label>
+              <label>
+                Call to action
+                <input
+                  value={form.cta}
+                  onChange={event => setForm({ ...form, cta: event.target.value })}
+                  placeholder={settings?.default_cta || "Contact Us Today"}
+                />
+              </label>
+              <label>
+                Hashtags
+                <input value={form.hashtags} onChange={event => setForm({ ...form, hashtags: event.target.value })} />
+              </label>
+            </div>
+          </details>
+          <button
+            className="button creative-generate"
+            disabled={busy || !form.headline.trim()}
+            onClick={() => void generate()}
+          >
+            {busy ? <Loader2 className="spin" size={17} /> : <ImagePlus size={17} />}
+            {busy ? "Generating…" : "Generate creative"}
+          </button>
+        </div>
+
+        <aside className="creative-progress-card">
+          <span>Secure production pipeline</span>
+          <h3>{busy ? "Creating your artwork" : "Ready to generate"}</h3>
+          <p>
+            Artwork comes from the configured image provider; Solarious text, logo and contact
+            details are applied server-side before Cloudinary storage.
+          </p>
+          <ol>
+            {STAGES.map((item, index) => {
+              const current = Math.max(0, STAGES.indexOf(stage));
+              const state =
+                stage === "failed" && index === current
+                  ? "failed"
+                  : index < current || stage === "completed"
+                    ? "done"
+                    : item === stage
+                      ? "active"
+                      : "";
+              return (
+                <li className={state} key={item}>
+                  <i>{index + 1}</i>
+                  <span>
+                    {item === "preparing"
+                      ? "Preparing prompt"
+                      : item === "generating"
+                        ? "Generating image"
+                        : item === "branding"
+                          ? "Applying branding"
+                          : item === "uploading"
+                            ? "Uploading to Cloudinary"
+                            : item === "saving"
+                              ? "Saving history"
+                              : "Completed"}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+          <small>Provider errors are surfaced verbatim — no placeholder image is ever reported as success.</small>
+        </aside>
+      </div>
+
+      {settings && (
+        <details className="creative-brand-card">
+          <summary>Brand overlay settings (logo, mobile, email, website)</summary>
+          <form onSubmit={saveSettings} className="creative-settings">
+            <label>
+              Company name
+              <input name="companyName" required defaultValue={settings.company_name} />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" required defaultValue={settings.email} />
+            </label>
+            <label>
+              Mobile
+              <input name="mobile" defaultValue={settings.mobile} />
+            </label>
+            <label>
+              Website
+              <input name="website" defaultValue={settings.website} />
+            </label>
+            <label>
+              Default CTA
+              <input name="defaultCta" defaultValue={settings.default_cta} />
+            </label>
+            <label>
+              Replace logo
+              <input name="logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif" />
+            </label>
+            <input type="hidden" name="showEmail" value="true" />
+            <input type="hidden" name="showMobile" value="true" />
+            <input type="hidden" name="showWebsite" value="true" />
+            <button className="button" disabled={busy}>
+              Save brand settings
+            </button>
+          </form>
+        </details>
+      )}
+
+      {workflow && (
+        <details className="creative-brand-card studio-workflow">
+          <summary>
+            Automated daily drafts — {workflow.enabled ? "enabled" : "paused"}
+          </summary>
+          <p className="studio-workflow-note">
+            Optional: 1–3 extra drafts per day, generated from the categories below. Drafts are never
+            published and never block the weekly business activity report.
+          </p>
+          <div className="creative-form-grid">
+            <label>
+              Daily workflow
+              <select
+                value={workflow.enabled ? "on" : "off"}
+                onChange={event => setWorkflow({ ...workflow, enabled: event.target.value === "on" })}
+              >
+                <option value="off">Paused</option>
+                <option value="on">Enabled</option>
+              </select>
+            </label>
+            <label>
+              Drafts per day
+              <select
+                value={workflow.dailyTarget}
+                onChange={event => setWorkflow({ ...workflow, dailyTarget: Number(event.target.value) })}
+              >
+                <option value={1}>1 draft</option>
+                <option value={2}>2 drafts</option>
+                <option value={3}>3 drafts</option>
+              </select>
+            </label>
+            <label>
+              Language
+              <select
+                value={workflow.language}
+                onChange={event => setWorkflow({ ...workflow, language: event.target.value })}
+              >
+                {LANGUAGES.map(language => (
+                  <option key={language}>{language}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Platform
+              <select
+                value={workflow.platform}
+                onChange={event => setWorkflow({ ...workflow, platform: event.target.value })}
+              >
+                {PLATFORMS.map(platform => (
+                  <option key={platform.id} value={platform.id}>
+                    {platform.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <fieldset className="studio-workflow-categories">
+            <legend>Categories it may draw from</legend>
+            {ALL_CREATIVE_CATEGORIES.map(category => (
+              <label key={category}>
+                <input
+                  type="checkbox"
+                  checked={workflow.categories.includes(category)}
+                  onChange={() => toggleWorkflowCategory(category)}
+                />
+                {category}
+              </label>
+            ))}
+          </fieldset>
+          <div className="studio-workflow-actions">
+            <button className="button" disabled={workflowBusy} onClick={() => void saveWorkflow()}>
+              {workflowBusy ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />}
+              Save workflow settings
+            </button>
+            <small>
+              {workflow.lastRunAt
+                ? `Last run ${new Date(workflow.lastRunAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`
+                : "No automated run recorded yet"}
+            </small>
+          </div>
+        </details>
+      )}
+
+      <div className="creative-history-head">
+        <div>
+          <span>Creative library</span>
+          <h3>Generation history</h3>
+        </div>
+        <p>
+          {visible.length} creative{visible.length === 1 ? "" : "s"}
+        </p>
+      </div>
+
+      <div className="studio-filters">
+        <label>
+          Search
+          <input
+            value={filters.query}
+            onChange={event => setFilters({ ...filters, query: event.target.value })}
+            placeholder="Title, headline or audience"
+          />
+        </label>
+        <label>
+          Category
+          <select value={filters.category} onChange={event => setFilters({ ...filters, category: event.target.value })}>
+            <option value="">All categories</option>
+            {ALL_CREATIVE_CATEGORIES.map(category => (
+              <option key={category}>{category}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Platform
+          <select value={filters.platform} onChange={event => setFilters({ ...filters, platform: event.target.value })}>
+            <option value="">All platforms</option>
+            {PLATFORMS.map(platform => (
+              <option key={platform.id} value={platform.id}>
+                {platform.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Review status
+          <select value={filters.review} onChange={event => setFilters({ ...filters, review: event.target.value })}>
+            <option value="">Any status</option>
+            {REVIEW_STATUSES.map(status => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          From
+          <input type="date" value={filters.from} onChange={event => setFilters({ ...filters, from: event.target.value })} />
+        </label>
+        <label>
+          To
+          <input type="date" value={filters.to} onChange={event => setFilters({ ...filters, to: event.target.value })} />
+        </label>
+        <label className="studio-toggle">
+          <input
+            type="checkbox"
+            checked={filters.saved}
+            onChange={event => setFilters({ ...filters, saved: event.target.checked })}
+          />
+          Saved to library only
+        </label>
+        <button type="button" className="button button-ghost" onClick={() => setFilters(EMPTY_FILTERS)}>
+          Reset filters
+        </button>
+      </div>
+
+      <div className="creative-card-grid">
+        {visible.map(item => (
+          <article className="creative-card" key={item.id}>
+            <button className="creative-thumb" onClick={() => item.image_url && setPreview(item)} disabled={!item.image_url}>
+              {item.image_url ? (
+                <img src={item.image_url} alt={item.headline} />
+              ) : (
+                <div>
+                  <ImagePlus />
+                  <span>{item.status === "failed" ? "Generation failed" : "Image unavailable"}</span>
+                </div>
+              )}
+              <b>{item.status}</b>
+            </button>
+            <div className="creative-card-body">
+              <span>
+                {(item.campaign_category || item.campaign_type) + " · " + item.creative_date}
+                {item.platform ? " · " + item.platform : ""}
+              </span>
+              <h4>{item.campaign_title || item.headline}</h4>
+              <p>{item.caption}</p>
+              {item.audience && <small className="creative-meta">Audience: {item.audience}</small>}
+              {item.status === "failed" && (
+                <small className="creative-failure">{item.error_summary || item.failure_code}</small>
+              )}
+              <div className="studio-review">
+                <span className={`review-chip ${item.review_status}`}>{item.review_status}</span>
+                <button type="button" onClick={() => void patch(item, { reviewStatus: "approved" }, "Creative approved.")}>
+                  <Check size={14} /> Approve
+                </button>
+                <button type="button" onClick={() => void patch(item, { reviewStatus: "rejected" }, "Creative rejected.")}>
+                  <X size={14} /> Reject
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void patch(item, { librarySaved: !item.library_saved }, item.library_saved ? "Removed from library." : "Saved to library.")}
+                >
+                  <ShieldCheck size={14} /> {item.library_saved ? "In library" : "Save to library"}
+                </button>
+                <button
+                  type="button"
+                  className={item.favourite ? "favourite on" : "favourite"}
+                  aria-label="Toggle favourite"
+                  onClick={() => void patch(item, { favourite: !item.favourite }, item.favourite ? "Removed from favourites." : "Marked as favourite.")}
+                >
+                  <Star size={14} />
+                </button>
+              </div>
+              <div className="creative-card-actions">
+                <button onClick={() => setPreview(item)} disabled={!item.image_url}>
+                  <Eye size={15} />Preview
+                </button>
+                <a href={`/api/admin/creatives/${item.id}/download`}>
+                  <Download size={15} />Download
+                </a>
+                <button
+                  onClick={() => setDraft(item)}
+                  disabled={!item.caption}
+                  title="Edit caption before publishing"
+                >
+                  <Pencil size={15} />Edit
+                </button>
+                <button onClick={() => void navigator.clipboard.writeText([item.headline, item.caption, item.cta, item.hashtags].filter(Boolean).join("\n"))}>
+                  <Copy size={15} />Copy
+                </button>
+                <button onClick={() => share(item)}>
+                  <Send size={15} />WhatsApp
+                </button>
+                <button onClick={() => void regenerate(item)} disabled={busy}>
+                  <RefreshCw size={15} />Regenerate
+                </button>
+                <button className="danger" onClick={() => setConfirmDelete(item)} aria-label="Delete creative">
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {!visible.length && (
+        <div className="admin-empty">
+          {items.length
+            ? "No creatives match these filters."
+            : "No creative history yet. Build the first campaign brief above."}
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="creative-modal" role="dialog" aria-modal="true" aria-label="Confirm delete">
+          <div className="studio-confirm">
+            <header>
+              <span>Delete creative</span>
+              <button onClick={() => setConfirmDelete(null)} aria-label="Cancel">
+                <X />
+              </button>
+            </header>
+            <p>
+              Permanently delete “{confirmDelete.campaign_title || confirmDelete.headline}”? The Cloudinary
+              image reference and prompt history are removed with it.
+            </p>
+            <footer>
+              <button className="button button-ghost" onClick={() => setConfirmDelete(null)}>
+                Cancel
+              </button>
+              <button className="button" onClick={() => void remove(confirmDelete)}>
+                Delete creative
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {draft && (
+        <div className="creative-modal" role="dialog" aria-modal="true" aria-label="Edit caption">
+          <div className="studio-confirm">
+            <header>
+              <span>Edit caption</span>
+              <button onClick={() => setDraft(null)} aria-label="Close">
+                <X />
+              </button>
+            </header>
+            <textarea
+              rows={5}
+              maxLength={180}
+              value={draft.caption}
+              onChange={event => setDraft({ ...draft, caption: event.target.value })}
+            />
+            <input
+              value={draft.headline}
+              maxLength={100}
+              onChange={event => setDraft({ ...draft, headline: event.target.value })}
+              aria-label="Headline"
+            />
+            <footer>
+              <button className="button button-ghost" onClick={() => setDraft(null)}>
+                Cancel
+              </button>
+              <button
+                className="button"
+                onClick={() => {
+                  const target = draft;
+                  setDraft(null);
+                  void patch(target, { caption: target.caption, headline: target.headline }, "Creative copy updated.");
+                }}
+              >
+                Save copy
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {preview && preview.image_url && (
+        <div className="creative-modal" role="dialog" aria-modal="true" aria-label="Creative preview">
+          <div>
+            <header>
+              <span>
+                {(preview.campaign_category || preview.campaign_type) + " · " + preview.creative_date}
+              </span>
+              <button onClick={() => setPreview(null)} aria-label="Close preview">
+                <X />
+              </button>
+            </header>
+            <img src={preview.image_url} alt={preview.headline} />
+            <footer>
+              <div>
+                <h3>{preview.headline}</h3>
+                <p>{preview.caption}</p>
+              </div>
+              <a className="button" href={`/api/admin/creatives/${preview.id}/download`}>
+                <Download size={16} />Download
+              </a>
+              <button className="button button-ghost" onClick={() => share(preview)}>
+                <Send size={16} />WhatsApp
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+    </section>
+  );
 }

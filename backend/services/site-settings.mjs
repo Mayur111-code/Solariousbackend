@@ -33,7 +33,7 @@ const array = (value, maximum, label) => {
   return value;
 };
 
-export const publicSiteSettingKeys = new Set(["aboutPage", "manufacturingPage", "branding", "seoSettings", "companyProfile"]);
+export const publicSiteSettingKeys = new Set(["aboutPage", "manufacturingPage", "branding", "seoSettings", "companyProfile", "performanceMetrics"]);
 export const editableSiteSettingKeys = new Set(publicSiteSettingKeys);
 
 const pageSection = (item, index) => ({
@@ -114,6 +114,22 @@ const sanitizers = {
         imageUrl: url(item?.imageUrl, "Process image", { relative: true }),
         videoUrl: url(item?.videoUrl, "Process video", { relative: true }),
         published: boolean(item?.published),
+      })),
+    };
+  },
+  // Homepage performance metrics. Values are company-supplied claims; the site
+  // labels them as indicative until the admin marks them verified.
+  performanceMetrics(input) {
+    const metrics = array(input?.metrics ?? [], 8, "Performance metrics");
+    return {
+      verified: input?.verified === true,
+      note: text(input?.note, 240, "Metrics note"),
+      metrics: metrics.map((item, index) => ({
+        label: text(item?.label, 60, "Metric label", true),
+        value: text(item?.value, 40, "Metric value", true),
+        description: text(item?.description, 200, "Metric description"),
+        published: item?.published !== false,
+        displayOrder: Number.isFinite(Number(item?.displayOrder)) ? Number(item.displayOrder) : index,
       })),
     };
   },

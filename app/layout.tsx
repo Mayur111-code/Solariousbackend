@@ -25,6 +25,10 @@ import "./whatsapp-contact.css";
 /* Loaded last so shared tokens and accessible states win over legacy rules. */
 import "./design-system.css";
 import "./public-hero.css";
+import "./compliance-rfq.css";
+/* Final layer: the navy-and-gold Solarious design system. Loaded last so it
+   re-skins every public surface without touching legacy markup. */
+import "./solarious-ui.css";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import FloatingAssistant from "@/components/floating-assistant";
@@ -77,6 +81,7 @@ export default async function RootLayout({
         <SiteHeader
           logoUrl={branding.logoUrl}
           alternateLogoUrl={branding.alternateLogoUrl}
+          company={company}
         />
         <div id="main-content">{children}</div>
         <SiteFooter logoUrl={branding.footerLogoUrl || branding.logoUrl} company={company} />

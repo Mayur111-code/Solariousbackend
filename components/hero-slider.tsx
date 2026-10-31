@@ -3,10 +3,32 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CalendarDays } from "lucide-react";
+import { ArrowRight, CalendarDays, Leaf, ShieldCheck, Sparkles } from "lucide-react";
 import type { HeroBanner } from "@/lib/hero-banners";
 
 type TouchOrigin = { x: number; y: number };
+
+/**
+ * Capability highlights shown under the hero CTAs. Wording is drawn from the
+ * site's existing pillars so no new company claims are introduced.
+ */
+const heroHighlights = [
+  {
+    icon: Sparkles,
+    label: "Advanced technology",
+    detail: "Modern cell architectures",
+  },
+  {
+    icon: ShieldCheck,
+    label: "Premium quality",
+    detail: "Traceable quality checks",
+  },
+  {
+    icon: Leaf,
+    label: "Sustainable progress",
+    detail: "Responsible manufacturing",
+  },
+] as const;
 
 /**
  * Homepage hero carousel. Autoplay is deliberately slow, pauses on hover,
@@ -106,6 +128,17 @@ export default function HeroSlider({ banners }: { banners: HeroBanner[] }) {
         <div className="hero-actions">
           <Link className="button" href={current.cta_href}>{current.cta_label}<ArrowRight size={18} /></Link>
           <Link className="button hero-outline" href="/quote">Get a Quote</Link>
+        </div>
+        <div className="hero-highlights">
+          {heroHighlights.map(({ icon: Icon, label, detail }) => (
+            <span key={label}>
+              <Icon size={19} aria-hidden="true" />
+              <span>
+                <strong>{label}</strong>
+                <small>{detail}</small>
+              </span>
+            </span>
+          ))}
         </div>
         <Link className="ai-indicator hero-ai hero-events-cta" href="/events">
           <CalendarDays size={16} />

@@ -1,23 +1,67 @@
-"use client";
-
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Check, Download, MessageSquareText } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import type { Product } from "@/data/site";
 
-export default function PremiumProductShowcase({ products }: { products: Product[] }) {
-  const [activeSlug, setActiveSlug] = useState(products[0]?.slug ?? "");
-  const active = products.find((product) => product.slug === activeSlug) ?? products[0];
-  if (!active) return null;
+/**
+ * Homepage product showcase: a responsive card grid in the reference layout.
+ * Product names, imagery, technology labels and summaries all come from the
+ * existing catalogue (CMS/API backed), so the redesign changes presentation
+ * only.
+ */
+export default function PremiumProductShowcase({
+  products,
+}: {
+  products: Product[];
+}) {
+  if (!products.length) return null;
 
-  return <div className="premium-product-showcase">
-    <div className="premium-product-tabs" role="tablist" aria-label="Solar module categories">
-      {products.map((product, index) => <button key={product.slug} type="button" role="tab" aria-selected={product.slug === active.slug} aria-controls="premium-product-panel" className={product.slug === active.slug ? "active" : ""} onClick={() => setActiveSlug(product.slug)}><span>{String(index + 1).padStart(2, "0")}</span>{product.name}</button>)}
-    </div>
-    <article id="premium-product-panel" className="premium-product-panel" role="tabpanel" key={active.slug}>
-      <div className="premium-product-visual"><Image src={active.image || "/utility-solar.webp"} alt={`${active.name} solar module application`} fill sizes="(max-width: 1050px) 100vw, 32vw" onError={(event) => { event.currentTarget.src = "/utility-solar.webp"; }} /><span>{active.technology}</span></div>
-      <div className="premium-product-copy"><p className="premium-kicker">Solar module portfolio</p><h3>{active.name}</h3><p>{active.summary}</p><ul>{active.features.slice(0, 3).map((feature) => <li key={feature}><Check size={16} />{feature}</li>)}</ul><p className="premium-product-applications"><strong>Applications</strong>{active.applications.join(" · ")}</p><div className="premium-product-actions"><Link className="premium-button" href={`/products/${active.slug}`}>Explore product <ArrowUpRight size={16} /></Link><Link className="premium-text-link" href="/about#company-documents"><Download size={16} /> Download brochure</Link><Link className="premium-text-link" href={`/quote?product=${active.slug}`}><MessageSquareText size={16} /> Enquire now</Link></div></div>
-    </article>
-  </div>;
+  return (
+    <>
+      <div className="premium-product-showcase">
+        {products.map((product, index) => (
+          <article className="product-showcase-card" key={product.slug}>
+            <div className="product-showcase-media">
+              <Image
+                src={product.image || "/utility-solar.webp"}
+                alt={`${product.name} solar module application`}
+                fill
+                sizes="(max-width: 540px) 92vw, (max-width: 1200px) 46vw, 23vw"
+              />
+            </div>
+            <div className="product-showcase-body">
+              <span className="product-showcase-index">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <h3>{product.name}</h3>
+              <p className="product-showcase-tech">{product.technology}</p>
+              <p>{product.summary}</p>
+              <Link
+                className="product-showcase-link"
+                href={`/products/${product.slug}`}
+                aria-label={`Learn more about ${product.name} modules`}
+              >
+                Learn more
+                <ArrowUpRight size={15} aria-hidden="true" />
+              </Link>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="product-showcase-footer">
+        <p>
+          Confirm final power, efficiency and warranty values with our technical
+          team before specifying a module.
+        </p>
+        <div className="premium-cta-buttons">
+          <Link className="premium-button" href="/products">
+            Explore all products <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+          <Link className="premium-text-link" href="/quote">
+            Request a quote <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
+    </>
+  );
 }
