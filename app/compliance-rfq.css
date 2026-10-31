@@ -101,10 +101,7 @@
 .rfq-event-list li{padding:10px 12px;border-left:3px solid #cfe0d6;background:#f8faf8;border-radius:0 8px 8px 0;font-size:.82rem}
 .rfq-event-list time{display:block;color:#6b7671;font-size:.7rem;font-weight:700}
 .rfq-notification-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.cert-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.cert-admin-grid .full{grid-column:1/-1}
-.cert-admin-standards{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-@media(max-width:820px){.rfq-detail-grid,.cert-admin-grid{grid-template-columns:1fr}}
+@media(max-width:820px){.rfq-detail-grid{grid-template-columns:1fr}}
 
 /* --- Homepage compliance ribbon ----------------------------------------- */
 .compliance-ribbon-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
