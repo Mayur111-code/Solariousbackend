@@ -550,6 +550,24 @@
   align-items: start;
 }
 
+/* The rail is column 1; everything else belongs in the results column. Written
+   as a default plus one exception (rather than per-class placements) so a new
+   child can never auto-place into the 292px rail and leave the right-hand
+   column empty. */
+.ps-catalogue > * {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.ps-catalogue > .ps-filter-panel {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.ps-catalogue > .ps-catalogue-results {
+  grid-row: 1;
+}
+
 .ps-filter-panel {
   position: sticky;
   top: calc(var(--ps-sticky) + 20px);
@@ -2755,6 +2773,15 @@
 @media (max-width: 1080px) {
   .ps-catalogue {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Single column: drop the placements so the rail and the results stack in
+     source order instead of sharing row 1. */
+  .ps-catalogue > *,
+  .ps-catalogue > .ps-filter-panel,
+  .ps-catalogue > .ps-catalogue-results {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .ps-filter-panel {

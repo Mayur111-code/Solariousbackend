@@ -75,8 +75,10 @@ export default function ProductListingView({
   const powers = products
     .flatMap((product) => product.variants.map((variant) => variant.power))
     .filter((power) => power > 0);
-  const minPower = powers.length ? Math.min(...powers) : 0;
-  const maxPower = powers.length ? Math.max(...powers) : 0;
+  /* A catalogue with no published variants must never render "0–0 Wp". */
+  const powerWindow = powers.length
+    ? { min: Math.min(...powers), max: Math.max(...powers) }
+    : null;
   const certifications = [
     ...new Set(products.flatMap((product) => product.certifications)),
   ].slice(0, 9);
@@ -136,12 +138,19 @@ export default function ProductListingView({
                 <strong>{seriesCount}</strong>
                 <small>Published series</small>
               </div>
-              <div>
-                <strong>
-                  {minPower}–{maxPower} Wp
-                </strong>
-                <small>Wattage window</small>
-              </div>
+              {powerWindow ? (
+                <div>
+                  <strong>
+                    {powerWindow.min}–{powerWindow.max} Wp
+                  </strong>
+                  <small>Wattage window</small>
+                </div>
+              ) : (
+                <div>
+                  <strong>On request</strong>
+                  <small>Wattage window</small>
+                </div>
+              )}
             </div>
           )}
 

@@ -161,25 +161,30 @@ export default function ProductFilters({
         </fieldset>
       </div>
 
-      <p className="ps-results-count" role="status">
-        Showing <strong>{filtered.length}</strong> of {products.length} published series
-      </p>
+      {/* The count and the cards travel together as one grid child so the
+          catalogue is always filters | results — never filters above cards in
+          the narrow left column. */}
+      <div className="ps-catalogue-results">
+        <p className="ps-results-count" role="status">
+          Showing <strong>{filtered.length}</strong> of {products.length} published series
+        </p>
 
-      {filtered.length ? (
-        <div className="ps-card-grid">
-          {filtered.map((product) => (
-            <ProductShowcaseCard key={product.slug} product={product} />
-          ))}
-        </div>
-      ) : (
-        <div className="ps-empty">
-          <h3>No modules match these filters</h3>
-          <p>Clear a filter, or talk to our engineering team about a project-specific module.</p>
-          <button type="button" className="ps-button ps-button-primary" onClick={reset}>
-            Reset filters
-          </button>
-        </div>
-      )}
+        {filtered.length ? (
+          <div className="ps-card-grid">
+            {filtered.map((product) => (
+              <ProductShowcaseCard key={product.slug} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="ps-empty">
+            <h3>No modules match these filters</h3>
+            <p>Clear a filter, or talk to our engineering team about a project-specific module.</p>
+            <button type="button" className="ps-button ps-button-primary" onClick={reset}>
+              Reset filters
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
