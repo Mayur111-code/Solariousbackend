@@ -29,6 +29,8 @@ import "./compliance-rfq.css";
 /* Final layer: the navy-and-gold Solarious design system. Loaded last so it
    re-skins every public surface without touching legacy markup. */
 import "./solarious-ui.css";
+/* Product system: scoped .ps-* design layer for /products and product detail. */
+import "./product-system.css";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import FloatingAssistant from "@/components/floating-assistant";

@@ -7,14 +7,15 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 test("20 MiB datasheets use direct cloud upload and server-side PDF verification", async () => {
   const [server, client] = await Promise.all([
     read("backend/server.mjs"),
-    read("components/admin-products.tsx"),
+    read("components/admin-product-editor.tsx"),
   ]);
   const exactLimit = Buffer.alloc(20 * 1024 * 1024);
   assert.equal(exactLimit.byteLength, 20_971_520);
   assert.match(server, /PRODUCT_DATASHEET_MAX_BYTES=20\*1024\*1024/);
   assert.match(server, /signature!=="%PDF-"/);
   assert.match(server, /datasheetSignatureRateLimit/);
-  assert.match(client, /uploadDirectly\(file,\s*signed,\s*setUploadProgress\)/);
+  assert.match(client, /uploadDirectly\(file,\s*signed,\s*setProgress\)/);
+  assert.match(client, /"\/api\/admin\/products\/verify-datasheet"/);
   assert.doesNotMatch(client, /upload-datasheet.*body:\s*form/);
 });
 test("retired Technology route is a permanent redirect and is absent from navigation", async () => {
