@@ -18,6 +18,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
+import AdminCategoryManager from "@/components/admin-category-manager";
 import { apiError } from "@/lib/api-error";
 import AdminProductEditor from "@/components/admin-product-editor";
 import {
@@ -275,6 +276,8 @@ export default function AdminProducts() {
           </ul>
         </article>
       </div>
+
+      <AdminCategoryManager />
 
       {stats?.pendingSpecs ? (
         <div className="admin-notice">

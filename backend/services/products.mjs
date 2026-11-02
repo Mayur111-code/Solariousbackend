@@ -32,6 +32,7 @@ export const PRODUCT_LIMITS = {
   certifications: 24,
   applications: 12,
   features: 20,
+  configurationNotes: 20,
   keywords: 20,
   reviewNotes: 20,
   documentBytes: 20 * 1024 * 1024,
@@ -324,6 +325,14 @@ export function normaliseProductPayload(body, { partial = false } = {}) {
   });
   if (features !== undefined) value.features = features;
 
+  const configurationNotes = textArray(body.configurationNotes, {
+    max: PRODUCT_LIMITS.configurationNotes,
+    length: 200,
+    label: "Configuration notes",
+    errors,
+  });
+  if (configurationNotes !== undefined) value.configurationNotes = configurationNotes;
+
   const certifications = textArray(body.certifications, {
     max: PRODUCT_LIMITS.certifications,
     length: 80,
@@ -401,7 +410,7 @@ export function normaliseProductPayload(body, { partial = false } = {}) {
     };
   }
 
-  for (const key of ["powerRange", "efficiencyRange", "cellType", "dimensions", "weight", "bifacial", "powerRating", "efficiency"]) {
+  for (const key of ["powerRange", "efficiencyRange", "powerTolerance", "cellType", "dimensions", "weight", "bifacial", "powerRating", "efficiency"]) {
     if (body[key] !== undefined && typeof body[key] === "string") value[key] = clampText(body[key], 120);
   }
 
@@ -475,4 +484,93 @@ export function duplicateProductInput(product, { slug } = {}) {
   delete next.updatedAt;
   delete next.__v;
   return next;
+}
+
+/* ------------------------------------------------------------------------- *
+ * Product category metadata
+ *
+ * The four category slugs are fixed by the brand (they are the route segments
+ * under /products). Everything else — the display label, tagline, blurb, hero
+ * image and highlight bullets — is admin editable and stored as an override.
+ * The frontend keeps its own code defaults so a fresh database still renders
+ * the catalogue; an empty override simply means "use the default".
+ * ------------------------------------------------------------------------- */
+
+export const CATEGORY_LIMITS = {
+  label: 60,
+  tagline: 120,
+  description: 2000,
+  image: 400,
+  technology: 120,
+  accent: 40,
+  highlights: 8,
+  highlightLength: 160,
+};
+
+/**
+ * Validate and sanitise a category override payload.
+ * `slug` is required so the override can be matched to a route.
+ */
+export function normaliseCategoryPayload(body, { partial = false } = {}) {
+  const errors = [];
+  if (!isRecord(body)) return { ok: false, errors: ["A category payload is required."], value: {} };
+
+  const value = {};
+
+  if (body.slug !== undefined || !partial) {
+    const slug = slugifyProductName(body.slug);
+    if (!PRODUCT_CATEGORY_SLUGS.includes(slug)) {
+      errors.push(`Category slug must be one of: ${PRODUCT_CATEGORY_SLUGS.join(", ")}.`);
+    }
+    value.slug = slug;
+  }
+
+  if (body.label !== undefined || !partial) value.label = clampText(body.label, CATEGORY_LIMITS.label);
+  if (body.tagline !== undefined) value.tagline = clampText(body.tagline, CATEGORY_LIMITS.tagline);
+  if (body.description !== undefined) value.description = clampText(body.description, CATEGORY_LIMITS.description);
+  if (body.technology !== undefined) value.technology = clampText(body.technology, CATEGORY_LIMITS.technology);
+  if (body.accent !== undefined) value.accent = clampText(body.accent, CATEGORY_LIMITS.accent);
+
+  if (body.image !== undefined) {
+    const image = text(body.image);
+    if (image && !EMAIL_SAFE_URL.test(image)) errors.push("Category image must be an absolute https URL or a site-relative path.");
+    value.image = image ? clampText(image, CATEGORY_LIMITS.image) : "";
+  }
+
+  if (body.highlights !== undefined) {
+    const highlights = textArray(body.highlights, {
+      max: CATEGORY_LIMITS.highlights,
+      length: CATEGORY_LIMITS.highlightLength,
+      label: "Category highlights",
+      errors,
+    });
+    if (highlights !== undefined) value.highlights = highlights;
+  }
+
+  if (body.published !== undefined || !partial) value.published = body.published !== false;
+  if (body.displayOrder !== undefined) value.displayOrder = Math.max(0, number(body.displayOrder));
+
+  if (!partial && !value.label) errors.push("A category label is required.");
+
+  return { ok: errors.length === 0, errors, value };
+}
+
+/** Strip a stored category override down to what the public site may read. */
+export function publicCategoryView(entry) {
+  if (!isRecord(entry)) return null;
+  const slug = text(entry.slug);
+  if (!PRODUCT_CATEGORY_SLUGS.includes(slug)) return null;
+  return {
+    slug,
+    label: clampText(entry.label, CATEGORY_LIMITS.label),
+    tagline: clampText(entry.tagline, CATEGORY_LIMITS.tagline),
+    description: clampText(entry.description, CATEGORY_LIMITS.description),
+    technology: clampText(entry.technology, CATEGORY_LIMITS.technology),
+    image: clampText(entry.image, CATEGORY_LIMITS.image),
+    accent: clampText(entry.accent, CATEGORY_LIMITS.accent),
+    highlights: Array.isArray(entry.highlights)
+      ? entry.highlights.map((item) => clampText(item, CATEGORY_LIMITS.highlightLength)).filter(Boolean).slice(0, CATEGORY_LIMITS.highlights)
+      : [],
+    published: entry.published !== false,
+  };
 }

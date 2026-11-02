@@ -25,7 +25,7 @@ import {RFQ_STATUS_IDS} from "./services/rfq.mjs";
 import {VERIFICATION_STATUSES} from "./services/certifications.mjs";
 import {retryPendingRfqs} from "./services/rfq-workflow.mjs";
 import {registerProcurementRoutes} from "./routes/procurement-routes.mjs";
-import {PRODUCT_CATEGORY_SLUGS,PRODUCT_LIMITS,buildPublicProductQuery,duplicateProductInput,normaliseProductPayload,slugifyProductName,statusPatch} from "./services/products.mjs";
+import {PRODUCT_CATEGORY_SLUGS,PRODUCT_LIMITS,buildPublicProductQuery,duplicateProductInput,normaliseCategoryPayload,normaliseProductPayload,publicCategoryView,slugifyProductName,statusPatch} from "./services/products.mjs";
 import {notificationStatus,rfqNotificationConfiguration,sendEmail,sendWebhook} from "./services/notifications.mjs";
 import {publicSiteSettingKeys,sanitizeSiteSetting} from "./services/site-settings.mjs";
 
@@ -86,6 +86,8 @@ const ProductSchema=new mongoose.Schema({
   cellType:{type:String,default:""},
   powerRange:{type:String,default:""},
   efficiencyRange:{type:String,default:""},
+  powerTolerance:{type:String,default:""},
+  configurationNotes:{type:[String],default:[]},
   powerMin:{type:Number,default:0,index:true},
   powerMax:{type:Number,default:0,index:true},
   technicalSpecifications:{type:mongoose.Schema.Types.Mixed,default:{}},
@@ -96,6 +98,20 @@ const ProductSchema=new mongoose.Schema({
 },timestamps);
 ProductSchema.index({category:1,status:1,displayOrder:1});
 const Product=mongoose.model("Product",ProductSchema);
+/* Admin-editable overrides for the four fixed category routes. The frontend
+   keeps its own code defaults, so an empty collection is a valid state. */
+const ProductCategory=mongoose.model("ProductCategory",new mongoose.Schema({
+  slug:{type:String,required:true,unique:true,index:true,enum:PRODUCT_CATEGORY_SLUGS},
+  label:{type:String,default:"",trim:true},
+  tagline:{type:String,default:"",trim:true},
+  description:{type:String,default:"",trim:true},
+  technology:{type:String,default:"",trim:true},
+  image:{type:String,default:"",trim:true},
+  accent:{type:String,default:"",trim:true},
+  highlights:{type:[String],default:[]},
+  published:{type:Boolean,default:true,index:true},
+  displayOrder:{type:Number,default:0,index:true},
+},timestamps));
 const Resource=mongoose.model("Resource",new mongoose.Schema({title:{type:String,required:true},description:{type:String,default:""},category:{type:String,default:"general",index:true},product:{type:String,default:""},issuingOrganization:{type:String,default:""},certificateNumber:{type:String,default:""},previewImageUrl:{type:String,default:""},previewImageStorageId:{type:String,default:""},logoUrl:{type:String,default:""},issueDate:{type:Date},expiryDate:{type:Date},verificationUrl:{type:String,default:""},fileName:{type:String,required:true},fileType:{type:String,required:true},fileSize:{type:Number,required:true},fileUrl:{type:String,required:true},storageId:{type:String,default:""},published:{type:Boolean,default:true,index:true},displayOrder:{type:Number,default:0,index:true}},timestamps));
 const HeroBanner=mongoose.model("HeroBanner",new mongoose.Schema({imageUrl:{type:String,required:true},storageId:{type:String,default:""},altText:{type:String,required:true},headline:{type:String,required:true},supportingText:{type:String,default:""},ctaLabel:{type:String,default:"Explore products"},ctaHref:{type:String,default:"/products"},published:{type:Boolean,default:true},displayOrder:{type:Number,default:0}},timestamps));
 const Event=mongoose.model("Event",new mongoose.Schema({slug:{type:String,required:true,unique:true,index:true},title:{type:String,required:true,trim:true},shortDescription:{type:String,required:true,trim:true,maxlength:800},description:{type:String,default:"",maxlength:12000},category:{type:String,default:"General"},eventDate:{type:Date,required:true,index:true},startTime:{type:String,default:""},endTime:{type:String,default:""},timezone:{type:String,default:"Asia/Kolkata"},venue:{type:String,required:true},address:{type:String,default:""},mapsUrl:{type:String,default:""},registrationUrl:{type:String,default:""},coverUrl:{type:String,default:""},coverStorageId:{type:String,default:""},gallery:{type:[{url:String,storageId:String}],default:[]},status:{type:String,enum:["scheduled","completed","cancelled"],default:"scheduled",index:true},published:{type:Boolean,default:false,index:true},featured:{type:Boolean,default:false},displayOrder:{type:Number,default:0,index:true}},timestamps));
@@ -237,14 +253,61 @@ app.get("/api/products",asyncRoute(async(req,res)=>{
   res.json({products,total,page,limit});
 }));
 
+const categoryOverrides=async()=>{
+  const stored=await ProductCategory.find({published:true}).lean();
+  const map=new Map();
+  for(const entry of stored){
+    const view=publicCategoryView(entry);
+    if(view)map.set(view.slug,view);
+  }
+  return map;
+};
+
 app.get("/api/products/categories",asyncRoute(async(_req,res)=>{
-  const counts=await Product.aggregate([
-    {$match:{published:{$ne:false},status:{$nin:["archived","draft"]}}},
-    {$group:{_id:"$category",count:{$sum:1}}},
+  const [counts,overrides]=await Promise.all([
+    Product.aggregate([
+      {$match:{published:{$ne:false},status:{$nin:["archived","draft"]}}},
+      {$group:{_id:"$category",count:{$sum:1}}},
+    ]),
+    categoryOverrides(),
   ]);
   const bySlug=new Map(counts.map(entry=>[String(entry._id||"").toLowerCase(),entry.count]));
   res.setHeader("Cache-Control","no-store");
-  res.json({categories:PRODUCT_CATEGORY_SLUGS.map(slug=>({slug,count:bySlug.get(slug)||0}))});
+  res.json({categories:PRODUCT_CATEGORY_SLUGS.map(slug=>({slug,count:bySlug.get(slug)||0,...(overrides.get(slug)||{slug,count:bySlug.get(slug)||0})}))});
+}));
+
+app.get("/api/admin/categories",admin,asyncRoute(async(_req,res)=>{
+  const stored=await ProductCategory.find().sort({displayOrder:1,slug:1}).lean();
+  const bySlug=new Map(stored.map(entry=>[entry.slug,entry]));
+  res.setHeader("Cache-Control","no-store");
+  res.json({categories:PRODUCT_CATEGORY_SLUGS.map(slug=>({
+    slug,
+    label:bySlug.get(slug)?.label||"",
+    tagline:bySlug.get(slug)?.tagline||"",
+    description:bySlug.get(slug)?.description||"",
+    technology:bySlug.get(slug)?.technology||"",
+    image:bySlug.get(slug)?.image||"",
+    accent:bySlug.get(slug)?.accent||"",
+    highlights:bySlug.get(slug)?.highlights||[],
+    published:bySlug.get(slug)?bySlug.get(slug).published!==false:true,
+    displayOrder:bySlug.get(slug)?.displayOrder||0,
+    overridden:bySlug.has(slug),
+  }))});
+}));
+
+app.put("/api/admin/categories",admin,asyncRoute(async(req,res)=>{
+  const {ok,errors,value}=normaliseCategoryPayload(req.body);
+  if(!ok)return res.status(400).json({error:errors[0],errors});
+  const item=await ProductCategory.findOneAndUpdate({slug:value.slug},{$set:value},{new:true,upsert:true,runValidators:true,setDefaultsOnInsert:true});
+  res.json({ok:true,category:{slug:item.slug,label:item.label,tagline:item.tagline,description:item.description,technology:item.technology,image:item.image,accent:item.accent,highlights:item.highlights,published:item.published,displayOrder:item.displayOrder,overridden:true}});
+}));
+
+app.delete("/api/admin/categories",admin,asyncRoute(async(req,res)=>{
+  const slug=slugifyProductName(req.query?.slug);
+  if(!PRODUCT_CATEGORY_SLUGS.includes(slug))return res.status(400).json({error:"A valid category slug is required."});
+  /* Never removes products — it only clears the override so the code default applies again. */
+  await ProductCategory.deleteOne({slug});
+  res.json({ok:true});
 }));
 
 app.get("/api/products/:slug",asyncRoute(async(req,res)=>{

@@ -130,6 +130,80 @@ test("flagged datasheet inconsistencies stay documented for the admin team", { s
   }
 });
 
+test("category labels use the brand spellings while slugs stay canonical", { skip }, () => {
+  const labels = new Map(catalogue.PRODUCT_CATEGORIES.map((category) => [category.slug, category.label]));
+  assert.equal(labels.get("mono-perc"), "Monocorn");
+  assert.equal(labels.get("topcon"), "Topcorn");
+  assert.equal(labels.get("bifacial"), "Bifacial");
+  assert.equal(labels.get("hjt"), "HJT");
+  /* The URL segments are the datasheet/brand slugs, never the display label. */
+  for (const category of catalogue.PRODUCT_CATEGORIES) {
+    assert.match(category.slug, /^[a-z-]+$/, `${category.label} must keep a url-safe slug`);
+  }
+});
+
+test("features and benefits are the claims printed on the datasheet cover", { skip }, () => {
+  const DATASHEET_FEATURES = [
+    "PID Free / Low LID Protection",
+    "Positive Tolerance @ 0~5W",
+    "100% In-Line Hi-Pot Testing",
+    "M10 MONO-PERC",
+  ];
+  const DATASHEET_BENEFITS = [
+    "Super Performance",
+    "Quality Materials",
+    "Advanced Technology",
+    "Warranty and Support",
+  ];
+  const withData = catalogue.catalogProducts.filter((product) => product.specTables.length);
+  assert.ok(withData.length >= 10, "expected the datasheet-backed series");
+  for (const product of withData) {
+    assert.deepEqual(product.features, DATASHEET_FEATURES, `${product.slug} feature list drifted`);
+    assert.deepEqual(
+      product.benefits.map((benefit) => benefit.title),
+      DATASHEET_BENEFITS,
+      `${product.slug} benefit list drifted`,
+    );
+    /* The three hero specification cards need real data to render. */
+    assert.ok(product.warranty.product, `${product.slug} has no product warranty text`);
+    assert.ok(product.warranty.performance, `${product.slug} has no performance warranty text`);
+    assert.equal(product.powerTolerance, "0 to +5 W");
+  }
+  /* Products with no published datasheet must never claim the datasheet
+     features or the four benefit headings — those are printed claims, not
+     generic marketing copy. */
+  for (const product of catalogue.catalogProducts.filter((item) => item.specsPending)) {
+    for (const claim of [...DATASHEET_FEATURES, ...DATASHEET_BENEFITS]) {
+      assert.ok(
+        !product.features.includes(claim) &&
+          !product.benefits.some((benefit) => benefit.title === claim),
+        `${product.slug} must not claim "${claim}" without a datasheet`,
+      );
+    }
+    /* Qualitative technology statements are allowed; measured values are not. */
+    assert.deepEqual(product.specTables, []);
+    assert.deepEqual(product.variants, []);
+    assert.deepEqual(product.documents, []);
+  }
+});
+
+test("series-specific configuration notes stay attached to their own module", { skip }, () => {
+  const withData = catalogue.catalogProducts.filter((product) => product.specTables.length);
+  const seen = new Set();
+  for (const product of withData) {
+    assert.ok(
+      (product.configurationNotes ?? []).length >= 2,
+      `${product.slug} should carry its own configuration bullets`,
+    );
+    for (const note of product.configurationNotes ?? []) {
+      seen.add(`${product.slug}::${note}`);
+    }
+  }
+  /* Bullets are per-series, so no two series share the same set. */
+  const fingerprints = withData.map((product) => (product.configurationNotes ?? []).join("|"));
+  assert.equal(new Set(fingerprints).size, fingerprints.length);
+});
+
 test("frequently asked questions avoid unsupported numeric claims", { skip }, () => {
   for (const product of catalogue.catalogProducts) {
     for (const faq of product.faqs) {

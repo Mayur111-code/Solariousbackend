@@ -153,7 +153,21 @@ test("all public pages route their hero through the shared system", async () => 
   assert.match(detail, /ProductImageGallery/);
   assert.match(productCss, /\.ps-hero-banner\s*\{[\s\S]*?grid-template-columns/);
   assert.match(productCss, /prefers-reduced-motion: reduce/);
-  assert.match(productCss, /@media \(max-width: 420px\)/);
+  /* The premium layer has to cover every width the brief calls out, down to
+     320px, and expose the navy band, the sticky tab strip and the three hero
+     specification cards. */
+  for (const width of [1200, 1080, 900, 768, 620, 430, 380, 320]) {
+    assert.match(
+      productCss,
+      new RegExp(`@media \\(max-width: ${width}px\\)`),
+      `product CSS must cover the ${width}px breakpoint`,
+    );
+  }
+  assert.match(productCss, /\.ps-band\s*\{/);
+  assert.match(productCss, /\.ps-tabbar\s*\{/);
+  assert.match(productCss, /\.ps-hero-cards\s*\{/);
+  assert.match(detail, /ProductTabNav/);
+  assert.match(detail, /ps-hero-cards/);
   const categoryImages = [...catalogue.matchAll(/image:\s*"(\/[^"]+)"/g)].map((match) => match[1]);
   assert.ok(categoryImages.length >= 4, "expected one image per product category");
   await Promise.all(

@@ -6,6 +6,7 @@ import {
   BadgeCheck,
   BatteryCharging,
   Building2,
+  ChevronRight,
   Factory,
   Gauge,
   Layers,
@@ -14,6 +15,7 @@ import {
   Wrench,
 } from "lucide-react";
 import ProductCategoryNav from "@/components/product-category-nav";
+import { HeroReveal, Reveal } from "@/components/product-motion";
 import ProductFilters from "@/components/product-filters";
 import type { CatalogProduct, ProductCategory } from "@/data/product-catalog";
 
@@ -85,16 +87,33 @@ export default function ProductListingView({
   const eyebrow = activeCategory
     ? `Product category · ${activeCategory.tagline}`
     : "Solar module portfolio";
+  const familyLabels = categories.map((category) => category.label);
   const intro = activeCategory
     ? activeCategory.description
-    : "Four module families, one engineering standard. Compare published Mono PERC, TOPCon, HJT and bifacial series — then request a datasheet-backed quotation.";
+    : `${familyLabels.length} module families, one engineering standard. Compare the published ${familyLabels.join(
+        ", ",
+      )} series — then request a datasheet-backed quotation.`;
   const heroImage = activeCategory?.image ?? "/utility-solar.webp";
 
   return (
     <main className="ps-page">
       {/* ------------------------------- hero ------------------------- */}
-      <section className="ps-hero-banner" aria-labelledby="catalogue-heading">
-        <div className="ps-hero-banner-copy">
+      <div className="ps-band">
+        <div className="ps-band-inner">
+          <nav className="ps-breadcrumb" aria-label="Breadcrumb">
+            <Link href="/">Home</Link>
+            <ChevronRight size={13} aria-hidden="true" />
+            <Link href="/products">Products</Link>
+            {activeCategory ? (
+              <>
+                <ChevronRight size={13} aria-hidden="true" />
+                <span aria-current="page">{activeCategory.label}</span>
+              </>
+            ) : null}
+          </nav>
+
+          <section className="ps-hero-banner" aria-labelledby="catalogue-heading">
+            <HeroReveal className="ps-hero-banner-copy">
           <p className="ps-kicker">{eyebrow}</p>
           <h1 id="catalogue-heading">{heading}</h1>
           <p className="ps-hero-banner-intro">{intro}</p>
@@ -134,9 +153,9 @@ export default function ProductListingView({
               Request a quote
             </Link>
           </div>
-        </div>
+            </HeroReveal>
 
-        <div className="ps-hero-banner-media">
+            <HeroReveal className="ps-hero-banner-media" delay={0.12}>
           <Image
             src={heroImage}
             alt={activeCategory ? `${activeCategory.label} solar modules` : "Solar modules in the field"}
@@ -151,8 +170,10 @@ export default function ProductListingView({
               <small>All published values traceable to a Solarious PDF</small>
             </span>
           </div>
+            </HeroReveal>
+          </section>
         </div>
-      </section>
+      </div>
 
       {/* --------------------------- category nav ---------------------- */}
       <div className="ps-category-bar">
@@ -168,7 +189,7 @@ export default function ProductListingView({
       </div>
 
       {/* ---------------------------- catalogue ------------------------ */}
-      <section className="ps-section ps-catalogue-section" id="catalogue" aria-labelledby="catalogue-list-heading">
+      <Reveal as="section" className="ps-section ps-catalogue-section" id="catalogue" aria-labelledby="catalogue-list-heading">
         <div className="ps-section-head">
           <p className="ps-kicker">
             {activeCategory ? `${activeCategory.label} series` : "Module catalogue"}
@@ -191,10 +212,10 @@ export default function ProductListingView({
           }))}
           initialCategory={activeCategory?.slug ?? "all"}
         />
-      </section>
+      </Reveal>
 
       {/* --------------------------- why choose ------------------------ */}
-      <section className="ps-section ps-why" aria-labelledby="why-heading">
+      <Reveal as="section" className="ps-section ps-why" aria-labelledby="why-heading">
         <div className="ps-section-head">
           <p className="ps-kicker">Why Solarious</p>
           <h2 id="why-heading">Why choose our modules</h2>
@@ -214,10 +235,10 @@ export default function ProductListingView({
             </article>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* --------------------------- advantages ------------------------ */}
-      <section className="ps-section ps-segments" aria-labelledby="segments-heading">
+      <Reveal as="section" className="ps-section ps-segments" aria-labelledby="segments-heading">
         <div className="ps-section-head">
           <p className="ps-kicker">Applications</p>
           <h2 id="segments-heading">Where these modules perform</h2>
@@ -238,11 +259,11 @@ export default function ProductListingView({
             </article>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* ------------------------- certifications ---------------------- */}
       {certifications.length ? (
-        <section className="ps-cert-band" aria-labelledby="cert-heading">
+        <Reveal as="section" className="ps-cert-band" aria-labelledby="cert-heading">
           <div>
             <p className="ps-kicker">Standards printed on the datasheets</p>
             <h2 id="cert-heading">Certifications &amp; approvals</h2>
@@ -261,11 +282,11 @@ export default function ProductListingView({
           <Link className="ps-text-link" href="/certifications">
             View certification library <ArrowRight size={15} aria-hidden="true" />
           </Link>
-        </section>
+        </Reveal>
       ) : null}
 
       {/* ------------------------------ CTA ---------------------------- */}
-      <section className="ps-cta-band" aria-labelledby="cta-heading">
+      <Reveal as="section" className="ps-cta-band" aria-labelledby="cta-heading">
         <div>
           <p className="ps-kicker">Next step</p>
           <h2 id="cta-heading">Get a datasheet-backed quotation</h2>
@@ -282,7 +303,7 @@ export default function ProductListingView({
             Talk to engineering
           </Link>
         </div>
-      </section>
+      </Reveal>
     </main>
   );
 }

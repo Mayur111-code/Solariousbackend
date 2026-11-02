@@ -17,7 +17,14 @@ const columnIndexFor = (
   });
 };
 
-export default function ProductSpecExplorer({ product }: { product: CatalogProduct }) {
+export default function ProductSpecExplorer({
+  product,
+  id,
+}: {
+  product: CatalogProduct;
+  /** Anchor target for the sticky section navigation. */
+  id?: string;
+}) {
   const variants = product.variants;
   const tables = product.specTables;
   const [activeId, setActiveId] = useState(variants[0]?.id ?? "");
@@ -28,7 +35,11 @@ export default function ProductSpecExplorer({ product }: { product: CatalogProdu
 
   if (!tables.length) {
     return (
-      <section className="ps-section ps-spec-pending" aria-labelledby="spec-heading">
+      <section
+      className="ps-section ps-spec-pending"
+      id={id}
+      aria-labelledby="spec-heading"
+    >
         <div className="ps-section-head">
           <p className="ps-kicker">Technical data</p>
           <h2 id="spec-heading">Specifications pending publication</h2>
@@ -67,7 +78,7 @@ export default function ProductSpecExplorer({ product }: { product: CatalogProdu
     : [];
 
   return (
-    <section className="ps-section ps-specs" aria-labelledby="spec-heading">
+    <section className="ps-section ps-specs" id={id} aria-labelledby="spec-heading">
       <div className="ps-section-head">
         <p className="ps-kicker">Technical data</p>
         <h2 id="spec-heading">Module specifications</h2>

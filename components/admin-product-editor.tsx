@@ -36,14 +36,16 @@ import {
 
 const SECTIONS = [
   { id: "basic", label: "1 · Basic information" },
-  { id: "images", label: "2 · Images" },
-  { id: "highlights", label: "3 · Highlights & features" },
-  { id: "specs", label: "4 · Specification groups" },
+  { id: "images", label: "2 · Images & gallery" },
+  { id: "wattage", label: "3 · Wattage & key specs" },
+  { id: "specs", label: "4 · Technical specifications" },
   { id: "variants", label: "5 · Variants" },
-  { id: "trust", label: "6 · Benefits & certifications" },
-  { id: "documents", label: "7 · Datasheets & PDFs" },
-  { id: "faqs", label: "8 · FAQs" },
-  { id: "seo", label: "9 · SEO & publishing" },
+  { id: "features", label: "6 · Features & benefits" },
+  { id: "certifications", label: "7 · Certifications" },
+  { id: "warranty", label: "8 · Warranty details" },
+  { id: "documents", label: "9 · Datasheet & PDFs" },
+  { id: "faqs", label: "10 · FAQs" },
+  { id: "seo", label: "11 · SEO & publishing" },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
@@ -442,24 +444,6 @@ export default function AdminProductEditor({
                     ))}
                   </select>
                 </label>
-                <label>
-                  Power range label
-                  <input
-                    value={draft.powerRange}
-                    onChange={(event) => update({ powerRange: event.target.value })}
-                    placeholder="575–600 Wp"
-                    maxLength={60}
-                  />
-                </label>
-                <label>
-                  Efficiency range label
-                  <input
-                    value={draft.efficiencyRange}
-                    onChange={(event) => update({ efficiencyRange: event.target.value })}
-                    placeholder="20.75–21.70%"
-                    maxLength={60}
-                  />
-                </label>
                 <label className="is-full">
                   Short summary *
                   <textarea
@@ -476,6 +460,14 @@ export default function AdminProductEditor({
                     value={draft.description}
                     onChange={(event) => update({ description: event.target.value })}
                     maxLength={6000}
+                  />
+                </label>
+                <label className="is-full">
+                  Applications (one per line)
+                  <textarea
+                    rows={3}
+                    value={draft.applications.join("\n")}
+                    onChange={(event) => update({ applications: linesToArray(event.target.value) })}
                   />
                 </label>
               </div>
@@ -556,21 +548,58 @@ export default function AdminProductEditor({
               </div>
             ) : null}
 
-            {section === "highlights" ? (
+            {section === "wattage" ? (
               <div className="admin-product-stack">
-                <PairEditor
-                  label="Highlight cards"
-                  hint="Short title plus one-line explanation, shown on the listing card and hero."
-                  entries={draft.highlights}
-                  onChange={(entries) => update({ highlights: entries })}
-                />
+                <div className="admin-form-grid">
+                  <label>
+                    Power range label
+                    <input
+                      value={draft.powerRange}
+                      onChange={(event) => update({ powerRange: event.target.value })}
+                      placeholder="575–600 Wp"
+                      maxLength={60}
+                    />
+                  </label>
+                  <label>
+                    Efficiency range label
+                    <input
+                      value={draft.efficiencyRange}
+                      onChange={(event) => update({ efficiencyRange: event.target.value })}
+                      placeholder="20.75–21.70%"
+                      maxLength={60}
+                    />
+                  </label>
+                  <label>
+                    Power tolerance
+                    <input
+                      value={draft.powerTolerance}
+                      onChange={(event) => update({ powerTolerance: event.target.value })}
+                      placeholder="0 to +5 W"
+                      maxLength={60}
+                    />
+                    <small>
+                      Printed tolerance. Rendered in the third hero specification card.
+                    </small>
+                  </label>
+                </div>
                 <PairEditor
                   label="Key specification cards"
-                  hint="Label / value pairs rendered as the specification cards under the hero."
+                  hint="Label / value pairs rendered as the specification strip under the hero."
                   entries={draft.keySpecs}
                   labelPlaceholder="Power range"
                   valuePlaceholder="575–600 Wp"
                   onChange={(entries) => update({ keySpecs: entries })}
+                />
+              </div>
+            ) : null}
+
+            {section === "features" ? (
+              <div className="admin-product-stack">
+                <PairEditor
+                  label="Overview highlight cards"
+                  hint="Four compact title + description pairs shown in the product overview section."
+                  entries={draft.highlights}
+                  onChange={(entries) => update({ highlights: entries })}
                 />
                 <label>
                   Feature list (one per line)
@@ -579,15 +608,31 @@ export default function AdminProductEditor({
                     value={draft.features.join("\n")}
                     onChange={(event) => update({ features: linesToArray(event.target.value) })}
                   />
+                  <small>
+                    Printed datasheet claims, e.g. &ldquo;PID Free / Low LID Protection&rdquo;.
+                    Shown as feature tiles.
+                  </small>
                 </label>
                 <label>
-                  Applications (one per line)
+                  Configuration notes (one per line)
                   <textarea
-                    rows={3}
-                    value={draft.applications.join("\n")}
-                    onChange={(event) => update({ applications: linesToArray(event.target.value) })}
+                    rows={4}
+                    value={draft.configurationNotes.join("\n")}
+                    onChange={(event) =>
+                      update({ configurationNotes: linesToArray(event.target.value) })
+                    }
                   />
+                  <small>
+                    Series-specific configuration bullets from this module&apos;s own datasheet
+                    page (cell count, reverse current, frame finish).
+                  </small>
                 </label>
+                <PairEditor
+                  label="Benefits"
+                  hint="Rendered as the benefit cards. Keep claims specific to this module."
+                  entries={draft.benefits}
+                  onChange={(entries) => update({ benefits: entries })}
+                />
               </div>
             ) : null}
 
@@ -904,14 +949,24 @@ export default function AdminProductEditor({
               </div>
             ) : null}
 
-            {section === "trust" ? (
+            {section === "certifications" ? (
               <div className="admin-product-stack">
-                <PairEditor
-                  label="Technical benefits"
-                  hint="Rendered as the engineering-advantage cards. Keep claims specific to this module."
-                  entries={draft.benefits}
-                  onChange={(entries) => update({ benefits: entries })}
-                />
+                <label>
+                  Certifications (one per line)
+                  <textarea
+                    rows={6}
+                    value={draft.certifications.join("\n")}
+                    onChange={(event) => update({ certifications: linesToArray(event.target.value) })}
+                  />
+                  <small>
+                    Standards printed on this module&apos;s datasheet, e.g. IEC 61730, ISO 9001.
+                  </small>
+                </label>
+              </div>
+            ) : null}
+
+            {section === "warranty" ? (
+              <div className="admin-product-stack">
                 <div className="admin-form-grid">
                   <label>
                     Product warranty
@@ -920,16 +975,20 @@ export default function AdminProductEditor({
                       onChange={(event) =>
                         update({ warranty: { ...draft.warranty, product: event.target.value } })
                       }
+                      placeholder="12 years on materials and workmanship"
                     />
+                    <small>Rendered in the first hero specification card.</small>
                   </label>
                   <label>
-                    Performance warranty
+                    Linear performance warranty
                     <input
                       value={draft.warranty.performance}
                       onChange={(event) =>
                         update({ warranty: { ...draft.warranty, performance: event.target.value } })
                       }
+                      placeholder="30-year linear performance statement"
                     />
+                    <small>Rendered in the second hero specification card.</small>
                   </label>
                   <label className="is-full">
                     Warranty caveat
@@ -939,14 +998,7 @@ export default function AdminProductEditor({
                         update({ warranty: { ...draft.warranty, note: event.target.value } })
                       }
                     />
-                  </label>
-                  <label className="is-full">
-                    Certifications (one per line)
-                    <textarea
-                      rows={4}
-                      value={draft.certifications.join("\n")}
-                      onChange={(event) => update({ certifications: linesToArray(event.target.value) })}
-                    />
+                    <small>Shown under the benefit cards when something needs verifying.</small>
                   </label>
                   <label className="is-full">
                     Data-review notes (one per line, shown to the public as a verification notice)

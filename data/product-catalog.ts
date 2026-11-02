@@ -71,6 +71,14 @@ export type CatalogProduct = {
   warranty: { product: string; performance: string; note?: string };
   powerRange: string;
   efficiencyRange: string;
+  /** Printed power tolerance, e.g. "0 to +5 W". Rendered in the hero spec card. */
+  powerTolerance?: string;
+  /**
+   * Series-specific configuration bullets taken from that module's own datasheet
+   * page (cell count, reverse current, frame finish). Rendered under the shared
+   * datasheet feature list.
+   */
+  configurationNotes?: string[];
   keySpecs: { label: string; value: string }[];
   variants: ProductVariant[];
   specTables: SpecTable[];
@@ -97,7 +105,7 @@ export type ProductCategory = {
 export const PRODUCT_CATEGORIES: ProductCategory[] = [
   {
     slug: "mono-perc",
-    label: "Mono PERC",
+    label: "Monocorn",
     tagline: "Proven monocrystalline efficiency",
     technology: "Passivated Emitter and Rear Cell",
     description:
@@ -144,7 +152,7 @@ export const PRODUCT_CATEGORIES: ProductCategory[] = [
   },
   {
     slug: "topcon",
-    label: "TOPCon",
+    label: "Topcorn",
     tagline: "Tunnel oxide passivated contact",
     technology: "Tunnel Oxide Passivated Contact",
     description:
@@ -169,6 +177,45 @@ const CERTIFICATIONS = [
   "ISO 45001",
   "IS 14286",
   "IS 61730-1 & 2",
+];
+
+/**
+ * Printed on the cover page of every Solarious module datasheet (G2B bifacial and
+ * mono-facial, pages 1/3/5/7/9). Verbatim from the PDF — nothing added.
+ */
+const DATASHEET_FEATURES = [
+  "PID Free / Low LID Protection",
+  "Positive Tolerance @ 0~5W",
+  "100% In-Line Hi-Pot Testing",
+  "M10 MONO-PERC",
+];
+
+/**
+ * "Benefits of Solarious Solar Panels" — printed on the same cover page. The
+ * descriptions below only restate values that appear elsewhere on the sheet
+ * (warranty terms, tolerance, cell format, load ratings).
+ */
+const DATASHEET_BENEFITS: ProductBenefit[] = [
+  {
+    title: "Super Performance",
+    description:
+      "Positive-only power tolerance of 0 to +5 W with no negative tolerance on nominal power, so a delivered module never sorts below its nameplate class.",
+  },
+  {
+    title: "Quality Materials",
+    description:
+      "3.2 mm high-transmission low-iron ARC tempered glass, an anodised aluminium alloy frame and an IP 68 certified junction box with bypass diodes.",
+  },
+  {
+    title: "Advanced Technology",
+    description:
+      "M10 mono-PERC half-cut cells with 10BB interconnection, PID-free encapsulation and 100% in-line Hi-Pot testing on every module.",
+  },
+  {
+    title: "Warranty and Support",
+    description:
+      "12-year product warranty on materials and workmanship plus a 30-year linear performance statement, claimable against the Solarious warranty certificate.",
+  },
 ];
 
 type RawSeries = {
@@ -746,7 +793,8 @@ const buildSeriesProduct = (series: RawSeries): CatalogProduct => {
       series.category === "bifacial"
         ? ["Utility-scale plants", "Ground-mounted arrays", "High-albedo sites"]
         : ["Commercial rooftop", "Industrial rooftops", "Ground-mounted arrays"],
-    features: series.features,
+    features: DATASHEET_FEATURES,
+    configurationNotes: series.features,
     highlights: [
       {
         title: `${wattage} power range`,
@@ -766,27 +814,7 @@ const buildSeriesProduct = (series: RawSeries): CatalogProduct => {
           "12-year product warranty on materials and workmanship, with a 30-year linear performance statement on the datasheet.",
       },
     ],
-    benefits: [
-      {
-        title: `${series.cells.split(",").slice(-1)[0].trim()} architecture`,
-        description:
-          "Half-cut mono-PERC cells with 10BB interconnection, as printed on the module datasheet.",
-      },
-      {
-        title: series.junctionBox,
-        description:
-          "Junction box configuration exactly as specified in the module mechanical table.",
-      },
-      {
-        title: `${series.maxReverseCurrent} reverse current`,
-        description:
-          "Maximum reverse current rating from the permissible operating conditions table.",
-      },
-      {
-        title: `${series.weight} handling weight`,
-        description: `Module dimensions ${series.dimensions}, with a ±2 mm dimensional tolerance.`,
-      },
-    ],
+    benefits: DATASHEET_BENEFITS,
     certifications: CERTIFICATIONS,
     warranty: {
       product: "12 years on materials and workmanship",
@@ -796,6 +824,7 @@ const buildSeriesProduct = (series: RawSeries): CatalogProduct => {
     },
     powerRange: wattage,
     efficiencyRange: efficiency,
+    powerTolerance: "0 to +5 W",
     keySpecs: [
       { label: "Power range", value: wattage },
       { label: "Module efficiency", value: efficiency },
@@ -840,7 +869,7 @@ const buildSeriesProduct = (series: RawSeries): CatalogProduct => {
       },
     ],
     seo: {
-      title: `${series.name} ${series.category === "bifacial" ? "Bifacial" : "Mono PERC"} Solar Module`,
+      title: `${series.name} ${series.category === "bifacial" ? "Bifacial" : "Monocorn"} Solar Module`,
       description: `${series.name} — ${wattage}, ${efficiency} module efficiency, ${series.dimensions}. Solarious ${series.model} datasheet values.`,
       keywords: [series.name, series.model, category.label, "solar module", "Solarious"],
     },
