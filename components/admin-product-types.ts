@@ -74,6 +74,8 @@ export type AdminProductRecord = {
   warranty: AdminWarranty;
   powerRange: string;
   efficiencyRange: string;
+  powerTolerance: string;
+  configurationNotes: string[];
   featured: boolean;
   displayOrder: number;
   updated_at?: string;
@@ -83,11 +85,13 @@ export type AdminProductRecord = {
   datasheetSize?: number;
 };
 
+/* These are the four fixed category routes. The labels are the brand spellings
+   used on the public site ("Monocorn" / "Topcorn"); the slugs match the URLs. */
 export const PRODUCT_CATEGORY_OPTIONS = [
-  { slug: "mono-perc", label: "Mono PERC" },
+  { slug: "mono-perc", label: "Monocorn (Mono PERC)" },
   { slug: "hjt", label: "HJT" },
   { slug: "bifacial", label: "Bifacial (G2B)" },
-  { slug: "topcon", label: "TOPCon" },
+  { slug: "topcon", label: "Topcorn (TOPCon)" },
 ];
 
 export const MODULE_TYPE_OPTIONS = [
@@ -154,6 +158,8 @@ export function emptyProduct(): AdminProductRecord {
     warranty: { product: "", performance: "", note: "" },
     powerRange: "",
     efficiencyRange: "",
+    powerTolerance: "",
+    configurationNotes: [],
     featured: false,
     displayOrder: 0,
   };
@@ -257,6 +263,8 @@ export function toDraft(raw: Record<string, unknown> | null | undefined): AdminP
     warranty,
     powerRange: text(raw.powerRange),
     efficiencyRange: text(raw.efficiencyRange),
+    powerTolerance: text(raw.powerTolerance),
+    configurationNotes: list(raw.configurationNotes),
     featured: raw.featured === true,
     displayOrder: Number(raw.displayOrder) || 0,
     updated_at: text(raw.updated_at) || text(raw.updatedAt) || undefined,
@@ -331,6 +339,8 @@ export function toPayload(draft: AdminProductRecord, overrides: Partial<AdminPro
     },
     powerRange: merged.powerRange.trim(),
     efficiencyRange: merged.efficiencyRange.trim(),
+    powerTolerance: merged.powerTolerance.trim(),
+    configurationNotes: merged.configurationNotes.map((item) => item.trim()).filter(Boolean),
     featured: merged.featured,
     displayOrder: Number(merged.displayOrder) || 0,
   };

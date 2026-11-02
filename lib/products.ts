@@ -168,6 +168,10 @@ function normaliseProduct(raw: unknown, seed?: CatalogProduct): CatalogProduct |
         : (fallback?.warranty ?? { product: "", performance: "" }),
     powerRange: str(raw.powerRange, fallback?.powerRange ?? ""),
     efficiencyRange: str(raw.efficiencyRange, fallback?.efficiencyRange ?? ""),
+    powerTolerance: str(raw.powerTolerance) || fallback?.powerTolerance || undefined,
+    configurationNotes: stringList(raw.configurationNotes).length
+      ? textList(raw.configurationNotes)
+      : fallback?.configurationNotes,
     keySpecs: Array.isArray(raw.keySpecs) && raw.keySpecs.length
       ? (raw.keySpecs as unknown[]).filter(isRecord).map((item) => ({
           label: str(item.label),
@@ -266,8 +270,49 @@ export type CategoryWithProducts = ProductCategory & {
   maxPower: number;
 };
 
+/**
+ * Admin-editable category copy stored by the backend. The four slugs are fixed
+ * (they are route segments), so these are overrides layered on the defaults in
+ * `data/product-catalog.ts` — an empty database still renders the catalogue.
+ */
+async function fetchCategoryOverrides(): Promise<Map<string, Partial<ProductCategory>>> {
+  const overrides = new Map<string, Partial<ProductCategory>>();
+  const backend = backendApiUrl();
+  if (!backend) return overrides;
+  try {
+    const response = await fetch(`${backend}/api/products/categories`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!response.ok) return overrides;
+    const payload = (await response.json()) as { categories?: unknown[] };
+    for (const entry of Array.isArray(payload.categories) ? payload.categories : []) {
+      if (!isRecord(entry)) continue;
+      const slug = str(entry.slug).toLowerCase();
+      if (!PRODUCT_CATEGORIES.some((item) => item.slug === slug)) continue;
+      const patch: Partial<ProductCategory> = {};
+      if (str(entry.label)) patch.label = str(entry.label);
+      if (str(entry.tagline)) patch.tagline = str(entry.tagline);
+      if (str(entry.description)) patch.description = str(entry.description);
+      if (str(entry.technology)) patch.technology = str(entry.technology);
+      if (str(entry.image)) patch.image = str(entry.image);
+      if (str(entry.accent)) patch.accent = str(entry.accent);
+      if (Array.isArray(entry.highlights) && entry.highlights.length) {
+        patch.highlights = textList(entry.highlights);
+      }
+      overrides.set(slug, patch);
+    }
+  } catch (error) {
+    console.error("Unable to load product category overrides", error);
+  }
+  return overrides;
+}
+
 export async function getProductCategories(): Promise<CategoryWithProducts[]> {
-  const products = await getCatalogProducts();
+  const [products, overrides] = await Promise.all([
+    getCatalogProducts(),
+    fetchCategoryOverrides(),
+  ]);
   return PRODUCT_CATEGORIES.map((category) => {
     const categoryProducts = products.filter((item) => item.category === category.slug);
     const powers = categoryProducts
@@ -275,11 +320,34 @@ export async function getProductCategories(): Promise<CategoryWithProducts[]> {
       .filter((value) => Number.isFinite(value) && value > 0);
     return {
       ...category,
+      ...(overrides.get(category.slug) ?? {}),
       products: categoryProducts,
       minPower: powers.length ? Math.min(...powers) : 0,
       maxPower: powers.length ? Math.max(...powers) : 0,
     };
   });
+}
+
+/**
+ * The brief names the families "Monocorn" and "Topcorn"; the datasheets and the
+ * live site use "Mono PERC" and "TOPCon". The canonical URLs stay
+ * /products/mono-perc and /products/topcon and these spellings redirect to them
+ * so either link works.
+ */
+const CATEGORY_ALIASES: Record<string, ProductCategorySlug> = {
+  monocorn: "mono-perc",
+  "mono-perc": "mono-perc",
+  monoperc: "mono-perc",
+  topcorn: "topcon",
+  topcon: "topcon",
+  topcornn: "topcon",
+  bifacial: "bifacial",
+  hjt: "hjt",
+};
+
+export function resolveCategorySlug(slug: string): ProductCategorySlug | null {
+  const key = String(slug ?? "").trim().toLowerCase();
+  return CATEGORY_ALIASES[key] ?? null;
 }
 
 export async function getCategory(slug: string): Promise<CategoryWithProducts | null> {

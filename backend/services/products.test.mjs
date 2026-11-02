@@ -4,7 +4,9 @@ import {
   PRODUCT_LIMITS,
   buildPublicProductQuery,
   duplicateProductInput,
+  normaliseCategoryPayload,
   normaliseProductPayload,
+  publicCategoryView,
   slugifyProductName,
   statusPatch,
 } from "./products.mjs";
@@ -219,4 +221,60 @@ test("duplicateProductInput resets identity and publishing state", () => {
   assert.equal(copy.displayOrder, 0);
   assert.equal(copy._id, undefined);
   assert.equal(copy.createdAt, undefined);
+});
+
+test("power tolerance and configuration notes survive normalisation", () => {
+  const result = normaliseProductPayload({
+    ...validPayload(),
+    powerTolerance: "0 to +5 W",
+    configurationNotes: ["156 half-cut mono-PERC cells", "", "30 A maximum reverse current"],
+  });
+  assert.equal(result.ok, true, result.errors.join("; "));
+  assert.equal(result.value.powerTolerance, "0 to +5 W");
+  assert.deepEqual(result.value.configurationNotes, [
+    "156 half-cut mono-PERC cells",
+    "30 A maximum reverse current",
+  ]);
+});
+
+test("category payload requires one of the four fixed slugs", () => {
+  const good = normaliseCategoryPayload({ slug: "topcon", label: "Topcorn", highlights: ["a", "b"] });
+  assert.equal(good.ok, true, good.errors.join("; "));
+  assert.equal(good.value.slug, "topcon");
+  assert.equal(good.value.label, "Topcorn");
+
+  const bad = normaliseCategoryPayload({ slug: "monocrystalline", label: "Nope" });
+  assert.equal(bad.ok, false);
+  assert.match(bad.errors[0], /must be one of/);
+
+  const noLabel = normaliseCategoryPayload({ slug: "hjt" });
+  assert.equal(noLabel.ok, false);
+});
+
+test("category payload rejects unsafe image urls and clamps highlights", () => {
+  const result = normaliseCategoryPayload({
+    slug: "bifacial",
+    label: "Bifacial",
+    image: "javascript:alert(1)",
+    highlights: Array.from({ length: 30 }, (_, index) => `point ${index}`),
+    published: false,
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors[0], /absolute https URL/);
+
+  const safe = normaliseCategoryPayload({
+    slug: "bifacial",
+    label: "Bifacial",
+    image: "/utility-solar.webp",
+    highlights: Array.from({ length: 30 }, (_, index) => `point ${index}`),
+  });
+  assert.equal(safe.ok, true);
+  assert.equal(safe.value.image, "/utility-solar.webp");
+  assert.equal(safe.value.highlights.length, 8);
+});
+
+test("publicCategoryView only exposes the four known slugs", () => {
+  assert.deepEqual(publicCategoryView({ slug: "mono-perc", label: "Monocorn" }).label, "Monocorn");
+  assert.equal(publicCategoryView({ slug: "not-a-category" }), null);
+  assert.equal(publicCategoryView(null), null);
 });

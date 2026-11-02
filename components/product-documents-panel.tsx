@@ -17,12 +17,14 @@ const KIND_LABEL: Record<NonNullable<ProductDocument["kind"]>, string> = {
 export default function ProductDocumentsPanel({
   documents,
   name,
+  id = "documents",
 }: {
   documents: ProductDocument[];
   name: string;
+  id?: string;
 }) {
   return (
-    <section className="ps-section ps-documents" aria-labelledby="documents-heading" id="documents">
+    <section className="ps-section ps-documents" aria-labelledby="documents-heading" id={id}>
       <div className="ps-section-head">
         <p className="ps-kicker">Documents</p>
         <h2 id="documents-heading">Datasheet &amp; downloads</h2>
