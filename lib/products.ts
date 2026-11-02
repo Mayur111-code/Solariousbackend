@@ -101,6 +101,27 @@ function normaliseGallery(value: unknown): string[] {
 }
 
 /**
+ * Older records keep both warranty clauses in one run-on sentence, e.g.
+ * "30 YEARS WARRANTY FOR LINEAR PERFORMANCE , 12 YEAR PRODUCT WARRANTY".
+ * Separate them so the UI can print them as two facts. Nothing is invented:
+ * if the sentence cannot be separated safely it is kept verbatim.
+ */
+function splitLegacyWarranty(text: unknown): { product: string; performance: string } {
+  const value = String(text ?? "").trim();
+  const parts = value
+    .split(/\s*,\s*|\s+·\s+|\s{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length < 2) return { product: value, performance: "" };
+  const performance = parts.find((part) => /performance|linear|yield|degradation/i.test(part));
+  const product = parts.find(
+    (part) => part !== performance && /product|workmanship|material/i.test(part),
+  );
+  if (performance && product) return { product, performance };
+  return { product: value, performance: "" };
+}
+
+/**
  * Older product records only carry the flat legacy fields. Merge them over the
  * matching seed record so the new layout keeps working for records that have
  * not been re-saved through the new admin editor, and so no field ever renders
@@ -113,10 +134,31 @@ function normaliseProduct(raw: unknown, seed?: CatalogProduct): CatalogProduct |
   const categorySlug = (
     str(raw.category, seed?.category ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
   ) as ProductCategorySlug;
-  const category = PRODUCT_CATEGORIES.find((item) => item.slug === categorySlug);
   const fallback: CatalogProduct | undefined = seed ?? catalogProduct(slug);
+  /* Resolve the category once and use it for both the route segment and the
+     visible label — otherwise a legacy record links to /products/mono-perc
+     while its card badge reads the generic "Solar module" fallback. */
+  const category =
+    PRODUCT_CATEGORIES.find((item) => item.slug === categorySlug) ??
+    PRODUCT_CATEGORIES.find((item) => item.slug === fallback?.category);
   const images = normaliseGallery(raw.gallery);
   const primaryImage = str(raw.image) || fallback?.image || "/utility-solar.webp";
+  const legacyWarranty = str(raw.warranty) ? splitLegacyWarranty(raw.warranty) : null;
+  const variants = normaliseVariants(raw.variants).length
+    ? normaliseVariants(raw.variants)
+    : (fallback?.variants ?? []);
+  const variantPowers = variants
+    .map((variant) => variant.power)
+    .filter((power) => Number.isFinite(power) && power > 0);
+  /* Records saved before the variant editor existed have no power range, which
+     leaves the card chip blank. Derive it from the variants we already hold. */
+  const lowestPower = variantPowers.length ? Math.min(...variantPowers) : 0;
+  const highestPower = variantPowers.length ? Math.max(...variantPowers) : 0;
+  const derivedPowerRange = variantPowers.length
+    ? lowestPower === highestPower
+      ? `${lowestPower} Wp`
+      : `${lowestPower}–${highestPower} Wp`
+    : "";
 
   return {
     slug,
@@ -159,14 +201,14 @@ function normaliseProduct(raw: unknown, seed?: CatalogProduct): CatalogProduct |
           performance: str(raw.warranty.performance, fallback?.warranty.performance ?? ""),
           note: str(raw.warranty.note) || undefined,
         }
-      : str(raw.warranty)
+      : legacyWarranty
         ? {
-            product: str(raw.warranty),
-            performance: fallback?.warranty.performance ?? "",
+            product: legacyWarranty.product,
+            performance: legacyWarranty.performance || fallback?.warranty.performance || "",
             note: fallback?.warranty.note,
           }
         : (fallback?.warranty ?? { product: "", performance: "" }),
-    powerRange: str(raw.powerRange, fallback?.powerRange ?? ""),
+    powerRange: str(raw.powerRange, fallback?.powerRange ?? "") || derivedPowerRange,
     efficiencyRange: str(raw.efficiencyRange, fallback?.efficiencyRange ?? ""),
     powerTolerance: str(raw.powerTolerance) || fallback?.powerTolerance || undefined,
     configurationNotes: stringList(raw.configurationNotes).length
@@ -178,9 +220,7 @@ function normaliseProduct(raw: unknown, seed?: CatalogProduct): CatalogProduct |
           value: str(item.value),
         })).filter((item) => item.label && item.value)
       : (fallback?.keySpecs ?? []),
-    variants: normaliseVariants(raw.variants).length
-      ? normaliseVariants(raw.variants)
-      : (fallback?.variants ?? []),
+    variants,
     specTables: normaliseSpecTables(raw.specTables).length
       ? normaliseSpecTables(raw.specTables)
       : (fallback?.specTables ?? []),
