@@ -1,6 +1,8 @@
 "use client";
-
+// Import Next.js navigation hooks to manage admin page URLs and browser history.
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
 import { BadgeCheck, CalendarDays, FileText, FolderKanban, Images, Inbox, LayoutDashboard, Package, PanelsTopLeft, Search, Settings, ShieldCheck, Sparkles, Trash2, Users } from "lucide-react";
 import { adminFetch } from "@/lib/admin-fetch";
 import { apiError } from "@/lib/api-error";
@@ -44,11 +46,45 @@ const titleFor=(tab:Tab)=>navItems.find(item=>item.id===tab)?.label||"Dashboard"
 const dateText=(value?:string)=>value?new Date(value).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—";
 
 export default function AdminDashboard({adminName}:{adminName:string}){
-  const [tab,setTab]=useState<Tab>("dashboard"),[collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
-  const [inquiries,setInquiries]=useState<Inquiry[]>([]),[overview,setOverview]=useState<Overview>({products:[],gallery:0,events:[],team:0,resources:0});
-  const [query,setQuery]=useState(""),[source,setSource]=useState(""),[statusFilter,setStatusFilter]=useState(""),[dateFilter,setDateFilter]=useState(""),[sort,setSort]=useState<"newest"|"oldest">("newest");
-  const [page,setPage]=useState(1),[loading,setLoading]=useState(true),[notice,setNotice]=useState(""),[error,setError]=useState("");
-  const [selected,setSelected]=useState<Inquiry|null>(null),[deleteTarget,setDeleteTarget]=useState<Inquiry|null>(null),[deleting,setDeleting]=useState(false);
+// Get Next.js navigation tools to manage the URL and browser history.
+const router = useRouter();
+const pathname = usePathname();
+const searchParams = useSearchParams();
+// Read the selected admin tab from the URL.
+const requestedTab = searchParams.get("tab");
+// Set the active tab based on the URL.
+// If no valid tab is found, show the Dashboard by default.
+const tab: Tab =
+  requestedTab && navItems.some((item) => item.id === requestedTab)
+    ? (requestedTab as Tab)
+    : "dashboard";
+// Update the URL whenever the user selects an admin section.
+// This allows browser Back and Forward buttons to navigate between tabs.
+const setTab = useCallback(
+  (nextTab: Tab) => {
+    const params = new URLSearchParams(searchParams.toString());
+   // Remove the tab parameter when returning to the Dashboard.
+    if (nextTab === "dashboard") {
+      params.delete("tab");
+    } else {
+      // Add the selected admin tab to the URL.
+      params.set("tab", nextTab);
+    }
+
+    const query = params.toString();
+    const nextUrl = query ? `${pathname}?${query}` : pathname;
+    // Navigate to the updated URL without reloading the page.
+    router.push(nextUrl, { scroll: false });
+  },
+  [pathname, router, searchParams]
+);
+// Manage sidebar collapse and mobile navigation states.
+const [collapsed, setCollapsed] = useState(false);
+const [mobileOpen, setMobileOpen] = useState(false);
+const [inquiries,setInquiries]=useState<Inquiry[]>([]),[overview,setOverview]=useState<Overview>({products:[],gallery:0,events:[],team:0,resources:0});
+const [query,setQuery]=useState(""),[source,setSource]=useState(""),[statusFilter,setStatusFilter]=useState(""),[dateFilter,setDateFilter]=useState(""),[sort,setSort]=useState<"newest"|"oldest">("newest");
+const [page,setPage]=useState(1),[loading,setLoading]=useState(true),[notice,setNotice]=useState(""),[error,setError]=useState("");
+const [selected,setSelected]=useState<Inquiry|null>(null),[deleteTarget,setDeleteTarget]=useState<Inquiry|null>(null),[deleting,setDeleting]=useState(false);
 
   const load=useCallback(async()=>{setLoading(true);setError("");try{const responses=await Promise.all([adminFetch("/api/admin/inquiries"),adminFetch("/api/admin/products"),adminFetch("/api/admin/gallery"),adminFetch("/api/admin/events"),adminFetch("/api/admin/team"),adminFetch("/api/admin/resources")]);for(const response of responses)if(!response.ok)throw await apiError(response,"Dashboard data could not be loaded");const[iq,pq,gq,eq,tq,rq]=await Promise.all(responses.map(response=>response.json()));setInquiries(iq.inquiries||[]);setOverview({products:pq.products||[],gallery:(gq.images||[]).length,events:eq.events||[],team:(tq.members||[]).length,resources:(rq.resources||[]).length})}catch(cause){setError(cause instanceof Error?cause.message:"Dashboard data could not be loaded.")}finally{setLoading(false)}},[]);
   useEffect(()=>{const timer=window.setTimeout(()=>void load(),0);return()=>window.clearTimeout(timer)},[load]);
