@@ -1,10 +1,12 @@
 body:has(.admin-workspace) > .site-header,
 body:has(.admin-workspace) > .site-footer,
+
 body:has(.admin-workspace) > .floating-ai,
 body:has(.admin-workspace) > .whatsapp-cta,
 body:has(.admin-workspace) #main-content > .site-footer {
   display: none !important;
 }
+
 
 body:has(.admin-workspace) { margin: 0; background: #f3f6fa; }
 body:has(.admin-workspace) #main-content { min-height: 100vh; }
@@ -212,4 +214,61 @@ body:has(.admin-workspace) #main-content { min-height: 100vh; }
   .cert-admin-grid textarea { font-size:16px; }
   .wizard-actions { display:grid; grid-template-columns:1fr; gap:10px; }
   .wizard-actions .button { width:100%; }.enterprise-search { grid-column:auto; }.enterprise-pagination { align-items:flex-start; flex-direction:column; }.enterprise-enquiry-detail dl { grid-template-columns:1fr; }.enterprise-enquiry-detail dl .full { grid-column:auto; }.enterprise-enquiry-detail>footer { align-items:stretch; flex-direction:column; }.admin-report-grid { grid-template-columns:1fr; }.admin-report-actions { flex-direction:column; }.admin-report-actions .button { width:100%; }.admin-toggle-row { align-items:flex-start; }.admin-image-uploader { grid-template-columns:1fr; }
+}
+
+/* Fix top bar alignment with admin sidebar */
+body:has(.admin-workspace:not(.sidebar-collapsed)) .top-bar-inner {
+  width: calc(100% - 306px) !important;
+  margin-left: 286px !important;
+  margin-right: 20px !important;
+  box-sizing: border-box;
+}
+
+body:has(.admin-workspace.sidebar-collapsed) .top-bar-inner {
+  width: calc(100% - 122px) !important;
+  margin-left: 102px !important;
+  margin-right: 20px !important;
+  box-sizing: border-box;
+}
+
+.top-bar-contact {
+  flex-shrink: 0;
+  padding-right: 12px;
+}
+
+
+/* Hide scrollbar but keep scrolling enabled */
+.enterprise-admin-sidebar,
+.enterprise-admin-main,
+.admin-workspace {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.enterprise-admin-sidebar::-webkit-scrollbar,
+.enterprise-admin-main::-webkit-scrollbar,
+.admin-workspace::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* Hide main page scrollbar but keep scrolling */
+html,
+body {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important;
+}
+
+/*admin-collapse-button*/
+.admin-collapse-button {
+  left: 267px; 
+}
+
+.enterprise-admin-sidebar.collapsed .admin-collapse-button {
+  left: 83px; 
 }
