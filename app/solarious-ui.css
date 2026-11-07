@@ -291,6 +291,9 @@ button.button:hover {
 }
 
 .premium-text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
   color: var(--navy-900);
   font-size: 0.76rem;
   font-weight: 800;
@@ -843,6 +846,14 @@ button.button:hover {
   color: var(--gold-500);
 }
 
+.footer-bottom a,
+.footer-brand > a,
+.hero-breadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+}
+
 .footer-bottom .footer-admin-button {
   min-height: 40px;
   padding: 9px 18px;
@@ -1104,7 +1115,7 @@ button.button:hover {
 /* Brand introduction ------------------------------------------------------ */
 .premium-intro {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) minmax(280px, 0.62fr);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.62fr);
   gap: clamp(24px, 4vw, 64px);
   align-items: start;
   border-bottom: 1px solid var(--line-soft);
@@ -1112,14 +1123,6 @@ button.button:hover {
 
 .premium-intro h2 {
   font-size: clamp(2rem, 3.6vw, 3.4rem);
-}
-
-.premium-section-number {
-  padding-top: 8px;
-  color: var(--slate-500);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
 }
 
 .premium-intro-copy {
@@ -1177,7 +1180,9 @@ button.button:hover {
 
 .metric-band-note {
   margin: 14px 0 0;
-  color: var(--slate-500);
+  padding: 0;
+  background: transparent;
+  color: var(--slate-900);
   font-size: 0.78rem;
   line-height: 1.6;
 }
@@ -1226,7 +1231,7 @@ button.button:hover {
   width: max-content;
   padding: 5px 10px;
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1313,13 +1318,6 @@ button.button:hover {
   flex-direction: column;
   gap: 8px;
   padding: 20px 20px 18px;
-}
-
-.product-showcase-index {
-  color: var(--gold-700);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
 }
 
 .product-showcase-body h3 {
@@ -1521,16 +1519,8 @@ button.button:hover {
   box-shadow: var(--shadow-card);
 }
 
-.premium-pillar-grid article > span {
-  align-self: start;
-  color: var(--slate-500);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-}
-
 .premium-pillar-grid svg {
-  margin: 26px 0 0;
+  margin: 0;
   width: 44px;
   height: 44px;
   padding: 11px;
@@ -1874,13 +1864,6 @@ button.button:hover {
   box-shadow: var(--shadow-card);
 }
 
-.content-card > span {
-  color: var(--gold-700);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-}
-
 .content-card > svg {
   position: absolute;
   top: 24px;
@@ -1901,8 +1884,15 @@ button.button:hover {
   object-fit: cover;
 }
 
+.content-card img ~ h2 {
+  padding-right: 0;
+}
+
+/* The check icon sits in the top-right corner, so the heading keeps clear of it;
+   headings that start below a card image never reach it (see img ~ h2). */
 .content-card h2 {
-  margin: 40px 0 10px;
+  margin: 0 0 10px;
+  padding-right: 46px;
   color: var(--navy-900);
   font-size: 1.25rem;
   font-weight: 700;
@@ -1978,7 +1968,7 @@ button.button:hover {
 
 .application-band span {
   color: var(--gold-500);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -2246,7 +2236,7 @@ button.button:hover {
   border-radius: 999px;
   background: rgba(6, 27, 54, 0.82);
   color: #ffffff;
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -2263,7 +2253,7 @@ button.button:hover {
 
 .product-body > .product-category {
   color: var(--gold-700);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -2399,8 +2389,8 @@ button.button:hover {
 
 .product-actions .product-cta-link {
   grid-column: 1 / -1;
-  min-height: 0;
-  padding: 2px 0 0;
+  min-height: 44px;
+  padding: 12px 0 0;
   color: var(--slate-500);
   font-weight: 700;
 }
@@ -2786,7 +2776,7 @@ button.button:hover {
   border-radius: 999px;
   background: var(--sky-100);
   color: var(--slate-700);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2889,16 +2879,18 @@ button.button:hover {
 
 @media (max-width: 1050px) {
   .premium-intro {
-    grid-template-columns: 44px 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .premium-intro-copy {
-    grid-column: 2;
+    grid-column: 1;
     padding-top: 0;
   }
 
   .premium-manufacturing {
-    grid-template-columns: 1fr;
+    /* minmax(0,…) so the image/copy children can shrink below their intrinsic
+       width at 320px instead of being clipped by the card's overflow. */
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .premium-manufacturing-image {
@@ -2918,10 +2910,6 @@ button.button:hover {
     align-items: center;
     gap: 4px 18px;
     min-height: 0;
-  }
-
-  .premium-pillar-grid article > span {
-    grid-column: 1 / -1;
   }
 
   .premium-pillar-grid svg {
@@ -2961,7 +2949,7 @@ button.button:hover {
   }
 
   .tool-workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .site-footer {
@@ -3056,10 +3044,6 @@ button.button:hover {
     grid-template-columns: 1fr;
   }
 
-  .premium-section-number {
-    display: none;
-  }
-
   .premium-manufacturing {
     border-radius: var(--radius-lg);
   }
@@ -3091,7 +3075,9 @@ button.button:hover {
     display: flex;
     overflow-x: auto;
     gap: 14px;
-    margin-right: calc(-1 * var(--gutter));
+    /* No negative inline margin: it pushed the scroller past the viewport edge
+       and produced a 4px horizontal overflow on phones. */
+    margin-right: 0;
     padding-bottom: 6px;
     scroll-snap-type: x mandatory;
   }
@@ -3509,8 +3495,8 @@ button.button:hover {
 }
 
 .related-grid span {
-  color: var(--slate-500);
-  font-size: 0.68rem;
+  color: var(--slate-400);
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -3731,6 +3717,21 @@ button.button:hover {
   color: #ffffff;
 }
 
+/* Below the four-technology layout the comparison table scrolls inside its own
+   rounded frame; clipping it here made the HJT and Bifacial columns unreachable. */
+@media (max-width: 900px) {
+  .compare-table {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .compare-row {
+    grid-template-columns: 1.05fr repeat(4, minmax(0, 1fr));
+    min-width: 720px;
+  }
+}
+
 .compare-cta {
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
@@ -3783,6 +3784,25 @@ button.button:hover {
 
 .ai-feature-card h3,
 .ai-card-top strong {
+  color: var(--navy-900);
+}
+
+/* The sequence number that used to sit on the left of this row is gone, so the
+   technology icon keeps its original top-right position. */
+.ai-section .ai-card-top {
+  justify-content: flex-end;
+}
+
+/* The homepage paints this section with its own navy surface, so the text
+   inside it has to come from the light-on-dark set. Without these overrides
+   the card headings above sit navy-on-navy and disappear. */
+.premium-home .ai-section .ai-feature-card h3 {
+  color: #ffffff;
+}
+
+/* The floating analytics panel is a white card over the section photograph;
+   its heading used to inherit the section's white text and disappear. */
+.premium-home .ai-section .analytics-panel {
   color: var(--navy-900);
 }
 
@@ -4824,7 +4844,15 @@ button.button:hover {
 
 .certification-groups {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
+}
+
+.certification-card-head .verification-chip {
+  flex: 0 0 auto;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
 }
 
 .certification-group {
@@ -4852,7 +4880,7 @@ button.button:hover {
 
 .certification-records {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 14px;
   margin-top: 18px;
 }
@@ -4921,7 +4949,7 @@ button.button:hover {
   border-radius: 6px;
   background: var(--sky-100);
   color: var(--navy-800);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -5339,6 +5367,7 @@ button.button:hover {
 
 .cert-logo-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 14px;
 }
@@ -5368,8 +5397,10 @@ button.button:hover {
 
 .cert-logo-controls {
   display: flex;
+  flex: 1 1 190px;
   flex-wrap: wrap;
   align-items: center;
+  min-width: 0;
   gap: 10px;
 }
 
@@ -5907,12 +5938,12 @@ button.button:hover {
 
 .location-popup-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 6px;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -6001,8 +6032,28 @@ button.button:hover {
   line-height: 1.6;
 }
 
+/* The business name is long; at the inherited 46px display size a single word
+   was wider than the detail column and got clipped by the panel. */
+.location-details h2 {
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+  overflow-wrap: anywhere;
+}
+
+.location-details {
+  align-items: stretch;
+}
+
 .location-details .contact-actions {
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  width: 100%;
+}
+
+.location-details .contact-actions > a,
+.location-details .contact-actions > button {
+  justify-content: center;
+  width: 100%;
 }
 
 @media (max-width: 760px) {
@@ -6014,12 +6065,12 @@ button.button:hover {
   .location-map-toolbar {
     top: 10px;
     right: 10px;
-    gap: 4px;
+    gap: 6px;
   }
 
   .location-map-toolbar button {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
   }
 
   .location-map-popup {
@@ -6029,10 +6080,28 @@ button.button:hover {
     max-width: none;
   }
 
-  .location-details .contact-actions a,
-  .location-details .contact-actions button {
-    flex: 1 1 100%;
-    justify-content: center;
+}
+
+/* ==========================================================================
+   Touch targets
+   Audit follow-up: standalone action links sat at ~20px tall on phones. Inline
+   links inside running copy are deliberately excluded.
+   ========================================================================== */
+@media (max-width: 760px) {
+  .ai-feature-grid .ai-card-action,
+  .product-actions .product-cta-link,
+  .premium-event-track article div > a,
+  .premium-cta-links > a,
+  .quote-page .quote-contact-note a.whatsapp-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-block: 10px;
+  }
+
+  .hero-breadcrumb a,
+  .footer-bottom .footer-top-link {
+    min-height: 34px;
   }
 }
 

@@ -17,7 +17,8 @@ test("homepage quote buttons open the shared accessible popup",async()=>{
 test("admin uses the selected dark-sidebar dashboard system with real modules",async()=>{
   const[dashboard,styles]=await Promise.all([read("components/admin-dashboard.tsx"),read("app/admin-dashboard.css")]);
   assert.match(dashboard,/All Enquiries/);
-  assert.match(dashboard,/Promise\.all\(\[/);
+  /* Feeds settle independently: one 404 must not reject the whole overview. */
+  assert.match(dashboard,/Promise\.allSettled\(/);
   assert.match(dashboard,/AdminReportSettings/);
   assert.match(styles,/--admin-navy: #142536/);
   assert.match(styles,/background: #f3f6fa/);

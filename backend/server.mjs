@@ -25,6 +25,7 @@ import {RFQ_STATUS_IDS} from "./services/rfq.mjs";
 import {VERIFICATION_STATUSES} from "./services/certifications.mjs";
 import {retryPendingRfqs} from "./services/rfq-workflow.mjs";
 import {registerProcurementRoutes} from "./routes/procurement-routes.mjs";
+import {PRODUCT_CATEGORY_SLUGS,PRODUCT_LIMITS,buildPublicProductQuery,duplicateProductInput,normaliseCategoryPayload,normaliseProductPayload,publicCategoryView,slugifyProductName,statusPatch} from "./services/products.mjs";
 import {notificationStatus,rfqNotificationConfiguration,sendEmail,sendWebhook} from "./services/notifications.mjs";
 import {publicSiteSettingKeys,sanitizeSiteSetting} from "./services/site-settings.mjs";
 
@@ -40,7 +41,77 @@ console.log("Backend integration configuration",{storage:cloudinaryConfigured?"c
 
 const timestamps={timestamps:true,versionKey:false};
 const Inquiry=mongoose.model("Inquiry",new mongoose.Schema({kind:{type:String,default:"contact",index:true},submissionKey:{type:String,default:"",index:true},name:{type:String,required:true,trim:true},company:{type:String,default:"",trim:true},email:{type:String,required:true,lowercase:true,trim:true,index:true},phone:{type:String,required:true,trim:true},product:{type:String,default:""},capacity:{type:String,default:""},location:{type:String,default:""},message:{type:String,required:true},details:{type:mongoose.Schema.Types.Mixed,default:{}},status:{type:String,enum:["new","contacted","qualified","closed"],default:"new",index:true}},timestamps));
-const Product=mongoose.model("Product",new mongoose.Schema({slug:{type:String,required:true,unique:true,index:true},name:{type:String,required:true},modelNumber:{type:String,default:""},category:{type:String,default:""},technology:{type:String,required:true,index:true},moduleType:{type:String,enum:["Monofacial","Bifacial","Monofacial / Bifacial","Other",""],default:"",index:true},status:{type:String,enum:["draft","published","archived"],default:"draft",index:true},summary:{type:String,required:true},description:{type:String,default:""},image:{type:String,default:""},imageStorageId:{type:String,default:""},gallery:{type:[String],default:[]},datasheetUrl:{type:String,default:""},datasheetStorageId:{type:String,default:""},datasheetName:{type:String,default:""},datasheetSize:{type:Number,default:0},datasheets:{type:[mongoose.Schema.Types.Mixed],default:[]},series:{type:[mongoose.Schema.Types.Mixed],default:[]},applications:{type:[String],default:[]},features:{type:[String],default:[]},bifacial:{type:String,default:""},powerRating:{type:String,default:""},efficiency:{type:String,default:""},dimensions:{type:String,default:""},weight:{type:String,default:""},cellType:{type:String,default:""},warranty:{type:String,default:""},technicalSpecifications:{type:mongoose.Schema.Types.Mixed,default:{}},featured:{type:Boolean,default:false,index:true},displayOrder:{type:Number,default:0,index:true},published:{type:Boolean,default:false,index:true}},timestamps));
+const ProductSchema=new mongoose.Schema({
+  /* --- identity ------------------------------------------------------- */
+  slug:{type:String,required:true,unique:true,index:true,trim:true},
+  name:{type:String,required:true,trim:true},
+  modelNumber:{type:String,default:""},
+  category:{type:String,default:"",index:true},
+  technology:{type:String,required:true,index:true},
+  moduleType:{type:String,enum:["Monofacial","Bifacial","Monofacial / Bifacial","Other",""],default:"",index:true},
+  status:{type:String,enum:["draft","published","archived"],default:"draft",index:true},
+  summary:{type:String,required:true},
+  description:{type:String,default:""},
+  /* --- media & documents ---------------------------------------------- */
+  image:{type:String,default:""},
+  imageStorageId:{type:String,default:""},
+  gallery:{type:[String],default:[]},
+  datasheetUrl:{type:String,default:""},
+  datasheetStorageId:{type:String,default:""},
+  datasheetName:{type:String,default:""},
+  datasheetSize:{type:Number,default:0},
+  datasheets:{type:[mongoose.Schema.Types.Mixed],default:[]},
+  documents:{type:[mongoose.Schema.Types.Mixed],default:[]},
+  /* --- catalogue content ---------------------------------------------- */
+  series:{type:[mongoose.Schema.Types.Mixed],default:[]},
+  applications:{type:[String],default:[]},
+  features:{type:[String],default:[]},
+  highlights:{type:[{title:String,description:String}],default:[]},
+  benefits:{type:[{title:String,description:String}],default:[]},
+  keySpecs:{type:[{label:String,value:String}],default:[]},
+  certifications:{type:[String],default:[]},
+  reviewNotes:{type:[String],default:[]},
+  specsPending:{type:Boolean,default:false},
+  variants:{type:[mongoose.Schema.Types.Mixed],default:[]},
+  specTables:{type:[mongoose.Schema.Types.Mixed],default:[]},
+  faqs:{type:[{question:String,answer:String}],default:[]},
+  seo:{type:mongoose.Schema.Types.Mixed,default:{}},
+  warranty:{type:mongoose.Schema.Types.Mixed,default:""},
+  /* --- legacy flat classification (kept for API compatibility) --------- */
+  bifacial:{type:String,default:""},
+  powerRating:{type:String,default:""},
+  efficiency:{type:String,default:""},
+  dimensions:{type:String,default:""},
+  weight:{type:String,default:""},
+  cellType:{type:String,default:""},
+  powerRange:{type:String,default:""},
+  efficiencyRange:{type:String,default:""},
+  powerTolerance:{type:String,default:""},
+  configurationNotes:{type:[String],default:[]},
+  powerMin:{type:Number,default:0,index:true},
+  powerMax:{type:Number,default:0,index:true},
+  technicalSpecifications:{type:mongoose.Schema.Types.Mixed,default:{}},
+  /* --- merchandising --------------------------------------------------- */
+  featured:{type:Boolean,default:false,index:true},
+  displayOrder:{type:Number,default:0,index:true},
+  published:{type:Boolean,default:false,index:true},
+},timestamps);
+ProductSchema.index({category:1,status:1,displayOrder:1});
+const Product=mongoose.model("Product",ProductSchema);
+/* Admin-editable overrides for the four fixed category routes. The frontend
+   keeps its own code defaults, so an empty collection is a valid state. */
+const ProductCategory=mongoose.model("ProductCategory",new mongoose.Schema({
+  slug:{type:String,required:true,unique:true,index:true,enum:PRODUCT_CATEGORY_SLUGS},
+  label:{type:String,default:"",trim:true},
+  tagline:{type:String,default:"",trim:true},
+  description:{type:String,default:"",trim:true},
+  technology:{type:String,default:"",trim:true},
+  image:{type:String,default:"",trim:true},
+  accent:{type:String,default:"",trim:true},
+  highlights:{type:[String],default:[]},
+  published:{type:Boolean,default:true,index:true},
+  displayOrder:{type:Number,default:0,index:true},
+},timestamps));
 const Resource=mongoose.model("Resource",new mongoose.Schema({title:{type:String,required:true},description:{type:String,default:""},category:{type:String,default:"general",index:true},product:{type:String,default:""},issuingOrganization:{type:String,default:""},certificateNumber:{type:String,default:""},previewImageUrl:{type:String,default:""},previewImageStorageId:{type:String,default:""},logoUrl:{type:String,default:""},issueDate:{type:Date},expiryDate:{type:Date},verificationUrl:{type:String,default:""},fileName:{type:String,required:true},fileType:{type:String,required:true},fileSize:{type:Number,required:true},fileUrl:{type:String,required:true},storageId:{type:String,default:""},published:{type:Boolean,default:true,index:true},displayOrder:{type:Number,default:0,index:true}},timestamps));
 const HeroBanner=mongoose.model("HeroBanner",new mongoose.Schema({imageUrl:{type:String,required:true},storageId:{type:String,default:""},altText:{type:String,required:true},headline:{type:String,required:true},supportingText:{type:String,default:""},ctaLabel:{type:String,default:"Explore products"},ctaHref:{type:String,default:"/products"},published:{type:Boolean,default:true},displayOrder:{type:Number,default:0}},timestamps));
 const Event=mongoose.model("Event",new mongoose.Schema({slug:{type:String,required:true,unique:true,index:true},title:{type:String,required:true,trim:true},shortDescription:{type:String,required:true,trim:true,maxlength:800},description:{type:String,default:"",maxlength:12000},category:{type:String,default:"General"},eventDate:{type:Date,required:true,index:true},startTime:{type:String,default:""},endTime:{type:String,default:""},timezone:{type:String,default:"Asia/Kolkata"},venue:{type:String,required:true},address:{type:String,default:""},mapsUrl:{type:String,default:""},registrationUrl:{type:String,default:""},coverUrl:{type:String,default:""},coverStorageId:{type:String,default:""},gallery:{type:[{url:String,storageId:String}],default:[]},status:{type:String,enum:["scheduled","completed","cancelled"],default:"scheduled",index:true},published:{type:Boolean,default:false,index:true},featured:{type:Boolean,default:false},displayOrder:{type:Number,default:0,index:true}},timestamps));
@@ -64,9 +135,9 @@ const Creative=mongoose.model("Creative",new mongoose.Schema({creativeDate:{type
 const creativeGenerationLockSchema=new mongoose.Schema({creativeDate:{type:String,required:true},dailySequence:{type:Number,required:true,min:1,max:3},createdAt:{type:Date,default:Date.now,expires:900}},{versionKey:false});
 creativeGenerationLockSchema.index({creativeDate:1,dailySequence:1},{unique:true});
 const CreativeGenerationLock=mongoose.model("CreativeGenerationLock",creativeGenerationLockSchema);
-const defaultProducts=[{slug:"mono-perc",name:"Mono PERC",technology:"Passivated Emitter and Rear Cell",summary:"A mature module category for dependable commercial, industrial and ground-mounted applications.",applications:["Commercial rooftop","Industrial","Solar EPC"],features:["Established cell architecture","Flexible project use","Configuration-dependent module formats"],bifacial:"Configuration dependent",image:"/utility-solar.webp"},{slug:"topcon",name:"TOPCon",technology:"Tunnel Oxide Passivated Contact",summary:"A performance-focused category for projects prioritising efficiency and energy yield.",applications:["Commercial rooftop","Industrial","Utility scale"],features:["Advanced contact architecture","Performance-focused design","Bifacial configurations may be available"],bifacial:"Configuration dependent",image:"/ai-solar-intelligence.webp"},{slug:"hjt",name:"HJT",technology:"Heterojunction Technology",summary:"A high-performance architecture combining crystalline silicon with thin-film layers.",applications:["Space-constrained sites","Premium rooftop","Specialised projects"],features:["Heterojunction cell structure","Strong low-light potential","Project-specific configuration"],bifacial:"Configuration dependent",image:"/manufacturing-line.webp"},{slug:"bifacial",name:"Bifacial",technology:"Dual-side Energy Generation",summary:"Designed to use front and rear irradiance where mounting and site albedo support it.",applications:["Utility scale","Ground-mounted arrays","High-albedo sites"],features:["Rear-side generation potential","Site-design dependent gain","Compatible technology variants"],bifacial:"Yes",image:"/utility-solar.webp"}];
+/* Legacy category placeholders removed — see initialiseDatabase note. */
 let databaseRetryTimer, databaseAttempts=0;
-const initialiseDatabase=async()=>{try{await connectDatabase();const legacyCreativeDateIndex=(await Creative.collection.indexes()).find(index=>index.name==="creativeDate_1"&&index.unique);if(legacyCreativeDateIndex)await Creative.collection.dropIndex("creativeDate_1");await CreativeGenerationLock.init();await Promise.all(defaultProducts.map(product=>Product.updateOne({slug:product.slug},{$setOnInsert:product},{upsert:true})));databaseAttempts=0;console.log("Database initialization complete")}catch(error){databaseAttempts+=1;const delay=Math.min(60_000,5_000*2**Math.min(databaseAttempts-1,3));console.error("Database initialization failed; retrying",{attempt:databaseAttempts,retryInMs:delay,name:error?.name||"Error",message:error?.message||"Unknown database error"});databaseRetryTimer=setTimeout(()=>void initialiseDatabase(),delay)}};
+const initialiseDatabase=async()=>{try{await connectDatabase();const legacyCreativeDateIndex=(await Creative.collection.indexes()).find(index=>index.name==="creativeDate_1"&&index.unique);if(legacyCreativeDateIndex)await Creative.collection.dropIndex("creativeDate_1");await CreativeGenerationLock.init();/* Category placeholder records are no longer seeded: category pages are derived from the product catalogue. Existing placeholders remain editable in the admin panel. */databaseAttempts=0;console.log("Database initialization complete")}catch(error){databaseAttempts+=1;const delay=Math.min(60_000,5_000*2**Math.min(databaseAttempts-1,3));console.error("Database initialization failed; retrying",{attempt:databaseAttempts,retryInMs:delay,name:error?.name||"Error",message:error?.message||"Unknown database error"});databaseRetryTimer=setTimeout(()=>void initialiseDatabase(),delay)}};
 
 const app=express();app.disable("x-powered-by");app.use(helmet({crossOriginResourcePolicy:{policy:"cross-origin"}}));app.use(compression());app.use(cors({origin(origin,callback){if(!origin||origins.has(origin))return callback(null,true);callback(Object.assign(new Error("Origin not allowed"),{status:403}))},credentials:true,methods:["GET","POST","PUT","PATCH","DELETE","OPTIONS"],allowedHeaders:["Content-Type","X-File-Name","Idempotency-Key"],optionsSuccessStatus:204}));app.use(express.json({limit:"1mb"}));
 const assistantRequests=new Map(),assistantRateLimit=(req,res,next)=>{const key=String(req.ip||req.socket.remoteAddress||"anonymous"),now=Date.now(),windowMs=10*60*1000,history=(assistantRequests.get(key)||[]).filter(time=>time>now-windowMs);if(history.length>=12)return res.status(429).json({error:"Please wait a few minutes before sending more assistant messages.",code:"AI_RATE_LIMITED"});history.push(now);assistantRequests.set(key,history);next()};
@@ -139,28 +210,248 @@ const weeklyReportHandler=asyncRoute(async(req,res)=>{if(!cronAuthorised(req))re
 app.get("/api/cron/enquiry-report",weeklyReportHandler);
 app.get("/api/cron/weekly-report",weeklyReportHandler);
 app.post("/api/cron/weekly-report",weeklyReportHandler);
-app.get("/api/products",asyncRoute(async(req,res)=>{const page=Math.max(1,Number(req.query.page)||1),limit=Math.min(100,Math.max(1,Number(req.query.limit)||100)),search=String(req.query.search||"").trim(),technology=String(req.query.technology||req.query.category||"").trim(),moduleType=String(req.query.moduleType||"").trim(),query={published:{$ne:false},status:{$ne:"archived"}},escaped=value=>value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");if(technology)query.technology=new RegExp(`^${escaped(technology)}$`,"i");if(moduleType)query.moduleType=new RegExp(escaped(moduleType),"i");if(search)query.$or=[{name:new RegExp(escaped(search),"i")},{technology:new RegExp(escaped(search),"i")},{summary:new RegExp(escaped(search),"i")},{powerRating:new RegExp(escaped(search),"i")}];const [products,total]=await Promise.all([Product.find(query).sort({displayOrder:1,name:1}).skip((page-1)*limit).limit(limit).lean(),Product.countDocuments(query)]);res.setHeader("Cache-Control","no-store");res.json({products,total,page,limit})}));
-app.get("/api/products/:slug",asyncRoute(async(req,res)=>{const slug=String(req.params.slug||"").trim().toLowerCase();if(!/^[a-z0-9-]{1,120}$/.test(slug))return res.status(400).json({error:"Invalid product identifier."});const product=await Product.findOne({slug,published:{$ne:false}}).lean();if(!product)return res.status(404).json({error:"Product not found."});res.setHeader("Cache-Control","no-store");res.json({product})}));
-app.get("/api/team",asyncRoute(async(_req,res)=>{const members=await TeamMember.find({isActive:true}).sort({displayOrder:1,name:1}).select("name designation shortInfo photoUrl linkedinUrl displayOrder").lean();res.json({members:members.map(row=>{const item=teamMember(row);delete item.photoPublicId;delete item.email;return item})})}));
-const validOptionalUrl=value=>{const text=String(value||"").trim();if(!text)return "";try{const url=new URL(text);if(!["http:","https:"].includes(url.protocol))throw new Error("Invalid URL");return url.toString()}catch{throw serviceError("LinkedIn URL must be a valid http(s) URL.","validation",400)}};
-const teamValues=(body,existing)=>{const name=String(body.name||"").trim(),designation=String(body.designation||"").trim(),shortInfo=String(body.shortInfo||"").trim(),email=String(body.email||"").trim();if(!name||!designation||!shortInfo)throw serviceError("Name, designation and short information are required.","validation",400);if(email&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))throw serviceError("Email address is invalid.","validation",400);return{name,designation,shortInfo,linkedinUrl:validOptionalUrl(body.linkedinUrl),email,displayOrder:Math.max(0,Number(body.displayOrder)||0),isActive:body.isActive==="true"||body.isActive===true,photoUrl:existing?.photoUrl||"/team-avatar.svg",photoPublicId:existing?.photoPublicId||""}};
-const teamPhotoValues=async(file)=>{if(!file)return{};await validateImageBuffer(file.buffer,{maxBytes:5*1024*1024,label:"Profile photograph"});if(!storageConfigured())throw serviceError("Cloud storage is not configured.","storage_configuration",503);const uploaded=await cloudUpload(Readable.from(file.buffer),{resource_type:"image",folder:"solarious/team",public_id:`team-${Date.now()}${extname(file.originalname)}`,transformation:[{width:1200,height:1200,crop:"limit",quality:"auto:good",fetch_format:"auto"}]});return{photoUrl:uploaded.secure_url,photoPublicId:uploaded.public_id}};
-app.get("/api/admin/team",admin,teamRoute("list",async(_req,res)=>res.json({members:(await TeamMember.find().sort({displayOrder:1,name:1}).lean()).map(teamMember)})));
-app.post("/api/admin/team",admin,teamPhoto,teamRoute("create",async(req,res)=>{const item=await TeamMember.create({...teamValues(req.body),...await teamPhotoValues(req.file)});res.status(201).json({ok:true,member:teamMember(item.toObject())})}));
-app.put("/api/admin/team/:id",admin,teamPhoto,teamRoute("update",async(req,res)=>{const existing=await TeamMember.findById(req.params.id);if(!existing)return res.status(404).json({error:"Not found"});const photo=await teamPhotoValues(req.file),item=await TeamMember.findByIdAndUpdate(existing._id,{...teamValues(req.body,existing),...photo},{new:true,runValidators:true});if(photo.photoPublicId&&existing.photoPublicId&&existing.photoPublicId!==photo.photoPublicId)await destroyUpload(existing.photoPublicId).catch(error=>console.error("Team photo replacement cleanup failed",{message:error?.message||"Unknown error"}));res.json({ok:true,member:teamMember(item.toObject())})}));
-app.patch("/api/admin/team/:id",admin,teamRoute("status",async(req,res)=>{const item=await TeamMember.findByIdAndUpdate(req.params.id,{isActive:Boolean(req.body.isActive)},{new:true});if(!item)return res.status(404).json({error:"Not found"});res.json({ok:true,member:teamMember(item.toObject())})}));
-app.delete("/api/admin/team/:id",admin,teamRoute("delete",async(req,res)=>{const item=await TeamMember.findByIdAndDelete(req.params.id);if(!item)return res.status(404).json({error:"Not found"});if(item.photoPublicId)await destroyUpload(item.photoPublicId).catch(error=>console.error("Team photo deletion cleanup failed",{message:error?.message||"Unknown error"}));res.json({ok:true})}));
-app.get("/api/admin/products",admin,asyncRoute(async(_req,res)=>res.json({products:(await Product.find().sort({name:1}).lean()).map(id)})));
-app.post("/api/admin/products/upload-image",admin,imageUpload("image"),asyncRoute(async(req,res)=>{if(!req.file)return res.status(400).json({error:"A JPEG, PNG, WebP or AVIF image is required."});await validateImageBuffer(req.file.buffer,{allowedTypes:["image/jpeg","image/png","image/webp","image/avif"],maxBytes:8*1024*1024,label:"Product image"});if(!storageConfigured())return res.status(503).json({error:"Cloud storage is not configured."});const uploaded=await cloudUpload(Readable.from(req.file.buffer),{resource_type:"image",folder:"solarious/products",public_id:`product-${Date.now()}${extname(req.file.originalname)}`});res.status(201).json({ok:true,url:uploaded.secure_url,storageId:uploaded.public_id})}));
-app.post("/api/admin/branding/upload",admin,brandingFile,asyncRoute(async(req,res)=>{if(!req.file)return res.status(400).json({error:"Choose a brand asset to upload."});if(req.file.mimetype==="image/svg+xml"){const svg=req.file.buffer.toString("utf8");if(!/^\s*<svg[\s>]/i.test(svg)||/<script|<foreignObject|\son\w+\s*=|(?:href|src)\s*=\s*["']\s*(?:https?:|data:|javascript:)/i.test(svg))return res.status(415).json({error:"SVG contains unsupported or unsafe content."});}else await validateImageBuffer(req.file.buffer,{allowedTypes:["image/jpeg","image/png","image/webp"],maxBytes:5*1024*1024,label:"Brand asset"});if(!storageConfigured())return res.status(503).json({error:"Cloud storage is not configured."});const uploaded=await cloudUpload(Readable.from(req.file.buffer),{resource_type:"image",folder:"solarious/branding",public_id:`brand-${Date.now()}${extname(req.file.originalname)}`});res.status(201).json({ok:true,url:uploaded.secure_url,storageId:uploaded.public_id})}));
-app.post("/api/admin/site-content/upload",admin,imageUpload("file"),asyncRoute(async(req,res)=>{if(!req.file)return res.status(400).json({error:"Choose a JPG, PNG or WebP image."});await validateImageBuffer(req.file.buffer,{allowedTypes:["image/jpeg","image/png","image/webp"],maxBytes:5*1024*1024,label:"Website content image"});if(!storageConfigured())return res.status(503).json({error:"Cloud storage is not configured."});const uploaded=await cloudUpload(Readable.from(req.file.buffer),{resource_type:"image",folder:"solarious/site-content",public_id:`content-${Date.now()}${extname(req.file.originalname)}`,transformation:[{width:2400,height:1600,crop:"limit",quality:"auto:good",fetch_format:"auto"}]});res.status(201).json({ok:true,url:uploaded.secure_url,storageId:uploaded.public_id})}));
-app.post("/api/admin/products/datasheet-signature",admin,datasheetSignatureRateLimit,asyncRoute(async(req,res)=>{const fileName=safeFileName(req.body?.fileName),fileSize=Number(req.body?.fileSize),fileType=String(req.body?.fileType||"").toLowerCase();if(!fileName.toLowerCase().endsWith(".pdf")||fileType!=="application/pdf")return res.status(415).json({error:"Only PDF datasheets are allowed."});if(!Number.isFinite(fileSize)||fileSize<=0)return res.status(400).json({error:"The PDF is empty or its size is invalid."});if(fileSize>PRODUCT_DATASHEET_MAX_BYTES)return res.status(413).json({error:"Datasheet PDF must be 20 MB or smaller."});if(!cloudinaryConfigured)return res.status(503).json({error:"Cloud storage is not configured."});await verifyCloudinaryCredentials();res.json(createSignedRawUpload({folder:PRODUCT_DATASHEET_FOLDER,prefix:"datasheet"}))}));
-app.post("/api/admin/products/verify-datasheet",admin,asyncRoute(async(req,res)=>{const storageId=String(req.body?.storageId||""),submittedUrl=String(req.body?.url||""),fileName=safeFileName(req.body?.fileName),submittedSize=Number(req.body?.fileSize);if(!storageId.startsWith(`${PRODUCT_DATASHEET_FOLDER}/datasheet-`))return res.status(400).json({error:"The uploaded PDF has an invalid storage identifier."});if(!/^https:\/\/res\.cloudinary\.com\//i.test(submittedUrl))return res.status(400).json({error:"The uploaded PDF URL is invalid."});if(!fileName.toLowerCase().endsWith(".pdf")||!Number.isFinite(submittedSize)||submittedSize<=0||submittedSize>PRODUCT_DATASHEET_MAX_BYTES)return res.status(400).json({error:"The uploaded PDF metadata is invalid."});const stored=await cloudinary.api.resource(storageId,{resource_type:"raw"});if(!stored?.secure_url||Number(stored.bytes)<=0||Number(stored.bytes)>PRODUCT_DATASHEET_MAX_BYTES)return res.status(413).json({error:"The stored datasheet is empty or exceeds 20 MB."});const probe=await fetch(stored.secure_url,{headers:{Range:"bytes=0-4"}});if(!probe.ok)return res.status(502).json({error:"The stored datasheet could not be verified."});const signature=Buffer.from(await probe.arrayBuffer()).subarray(0,5).toString("ascii");if(signature!=="%PDF-"){await destroyUpload(storageId,{resource_type:"raw"}).catch(()=>{});return res.status(415).json({error:"The uploaded file is not a valid PDF document."});}res.json({ok:true,url:stored.secure_url,storageId,fileName,fileSize:Number(stored.bytes)})}));
-app.post("/api/admin/products/upload-datasheet",admin,(_req,res)=>res.status(410).json({error:"Use the secure direct PDF upload flow."}));
+/* -------------------------------------------------------------------------
+ * Product catalogue API
+ *
+ * Public:  GET /api/products            (filters, pagination, search)
+ *          GET /api/products/categories (counts for the category navigation)
+ *          GET /api/products/:slug
+ * Admin:   GET    /api/admin/products            (list)
+ *          GET    /api/admin/products/stats      (dashboard counters)
+ *          GET    /api/admin/products/:id
+ *          POST   /api/admin/products
+ *          POST   /api/admin/products/:id/duplicate
+ *          PUT    /api/admin/products            (legacy slug-keyed update)
+ *          PUT    /api/admin/products/:id
+ *          PATCH  /api/admin/products/:id        (status / publish / draft)
+ *          DELETE /api/admin/products            (legacy slug-keyed delete)
+ *          DELETE /api/admin/products/:id
+ * ---------------------------------------------------------------------- */
 const usableImageUrl=value=>{const url=String(value||"").trim();return url.startsWith("/")||/^https:\/\//i.test(url)};
-app.post("/api/admin/products",admin,asyncRoute(async(req,res)=>{const body=req.body||{},slug=String(body.slug||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");if(!slug||!String(body.name||"").trim()||!String(body.technology||"").trim()||!String(body.summary||"").trim())return res.status(400).json({error:"Slug, name, technology and summary are required."});if(body.published===true&&!usableImageUrl(body.image))return res.status(400).json({error:"Upload a product image before publishing."});if(await Product.exists({slug}))return res.status(409).json({error:"A product with this slug already exists."});const item=await Product.create({...body,slug});res.status(201).json({ok:true,product:id(item.toObject())})}));
-app.put("/api/admin/products",admin,asyncRoute(async(req,res)=>{const {slug,...update}=req.body;if(!slug)return res.status(400).json({error:"Product slug is required."});const existing=await Product.findOne({slug});if(!existing)return res.status(404).json({error:"Product not found."});if(update.published===true&&!usableImageUrl(update.image||existing.image))return res.status(400).json({error:"Upload a product image before publishing."});const item=await Product.findByIdAndUpdate(existing._id,update,{new:true,runValidators:true});if(existing.datasheetStorageId&&update.datasheetStorageId!==undefined&&update.datasheetStorageId!==existing.datasheetStorageId)await destroyUpload(existing.datasheetStorageId,{resource_type:"raw"}).catch(error=>console.error("Previous product datasheet cleanup failed",{message:error?.message||"Unknown error"}));if(existing.imageStorageId&&update.imageStorageId&&update.imageStorageId!==existing.imageStorageId)await destroyUpload(existing.imageStorageId).catch(error=>console.error("Previous product image cleanup failed",{message:error?.message||"Unknown error"}));res.json({ok:true,product:id(item.toObject())})}));
-app.delete("/api/admin/products",admin,asyncRoute(async(req,res)=>{const item=await Product.findOneAndDelete({slug:String(req.query.slug||"")});if(!item)return res.status(404).json({error:"Product not found."});if(item.datasheetStorageId)await destroyUpload(item.datasheetStorageId,{resource_type:"raw"}).catch(()=>{});if(item.imageStorageId)await destroyUpload(item.imageStorageId).catch(()=>{});res.json({ok:true})}));
+const productAssetIds=item=>[item?.imageStorageId,item?.datasheetStorageId].filter(Boolean);
+const destroyProductAssets=async item=>{for(const storageId of productAssetIds(item)){await destroyUpload(storageId,{resource_type:"raw"}).catch(error=>console.error("Product asset cleanup failed",{message:error?.message||"Unknown error"}))}};
+const findProductById=async value=>{
+  if(!/^[a-f0-9]{24}$/i.test(String(value||"")))return null;
+  return Product.findById(String(value));
+};
+const publishGuard=(payload,existing)=>{
+  const image=payload.image??existing?.image;
+  return payload.published===true&&!usableImageUrl(image)?"Upload a product image before publishing.":"";
+};
+
+/* Public catalogue listing. Filters never widen visibility: drafts and
+   archived records are excluded by buildPublicProductQuery. */
+app.get("/api/products",asyncRoute(async(req,res)=>{
+  const page=Math.max(1,Number(req.query.page)||1);
+  const limit=Math.min(100,Math.max(1,Number(req.query.limit)||100));
+  const query=buildPublicProductQuery(req.query);
+  const [products,total]=await Promise.all([
+    Product.find(query).sort({displayOrder:1,name:1}).skip((page-1)*limit).limit(limit).lean(),
+    Product.countDocuments(query),
+  ]);
+  res.setHeader("Cache-Control","no-store");
+  res.json({products,total,page,limit});
+}));
+
+const categoryOverrides=async()=>{
+  const stored=await ProductCategory.find({published:true}).lean();
+  const map=new Map();
+  for(const entry of stored){
+    const view=publicCategoryView(entry);
+    if(view)map.set(view.slug,view);
+  }
+  return map;
+};
+
+app.get("/api/products/categories",asyncRoute(async(_req,res)=>{
+  const [counts,overrides]=await Promise.all([
+    Product.aggregate([
+      {$match:{published:{$ne:false},status:{$nin:["archived","draft"]}}},
+      {$group:{_id:"$category",count:{$sum:1}}},
+    ]),
+    categoryOverrides(),
+  ]);
+  const bySlug=new Map(counts.map(entry=>[String(entry._id||"").toLowerCase(),entry.count]));
+  res.setHeader("Cache-Control","no-store");
+  res.json({categories:PRODUCT_CATEGORY_SLUGS.map(slug=>({slug,count:bySlug.get(slug)||0,...(overrides.get(slug)||{slug,count:bySlug.get(slug)||0})}))});
+}));
+
+app.get("/api/admin/categories",admin,asyncRoute(async(_req,res)=>{
+  const stored=await ProductCategory.find().sort({displayOrder:1,slug:1}).lean();
+  const bySlug=new Map(stored.map(entry=>[entry.slug,entry]));
+  res.setHeader("Cache-Control","no-store");
+  res.json({categories:PRODUCT_CATEGORY_SLUGS.map(slug=>({
+    slug,
+    label:bySlug.get(slug)?.label||"",
+    tagline:bySlug.get(slug)?.tagline||"",
+    description:bySlug.get(slug)?.description||"",
+    technology:bySlug.get(slug)?.technology||"",
+    image:bySlug.get(slug)?.image||"",
+    accent:bySlug.get(slug)?.accent||"",
+    highlights:bySlug.get(slug)?.highlights||[],
+    published:bySlug.get(slug)?bySlug.get(slug).published!==false:true,
+    displayOrder:bySlug.get(slug)?.displayOrder||0,
+    overridden:bySlug.has(slug),
+  }))});
+}));
+
+app.put("/api/admin/categories",admin,asyncRoute(async(req,res)=>{
+  const {ok,errors,value}=normaliseCategoryPayload(req.body);
+  if(!ok)return res.status(400).json({error:errors[0],errors});
+  const item=await ProductCategory.findOneAndUpdate({slug:value.slug},{$set:value},{new:true,upsert:true,runValidators:true,setDefaultsOnInsert:true});
+  res.json({ok:true,category:{slug:item.slug,label:item.label,tagline:item.tagline,description:item.description,technology:item.technology,image:item.image,accent:item.accent,highlights:item.highlights,published:item.published,displayOrder:item.displayOrder,overridden:true}});
+}));
+
+app.delete("/api/admin/categories",admin,asyncRoute(async(req,res)=>{
+  const slug=slugifyProductName(req.query?.slug);
+  if(!PRODUCT_CATEGORY_SLUGS.includes(slug))return res.status(400).json({error:"A valid category slug is required."});
+  /* Never removes products — it only clears the override so the code default applies again. */
+  await ProductCategory.deleteOne({slug});
+  res.json({ok:true});
+}));
+
+app.get("/api/products/:slug",asyncRoute(async(req,res)=>{
+  const slug=String(req.params.slug||"").trim().toLowerCase();
+  if(!/^[a-z0-9-]{1,120}$/.test(slug))return res.status(400).json({error:"Invalid product identifier."});
+  const product=await Product.findOne({slug,published:{$ne:false},status:{$nin:["archived","draft"]}}).lean();
+  if(!product)return res.status(404).json({error:"Product not found."});
+  res.setHeader("Cache-Control","no-store");
+  res.json({product});
+}));
+
+app.get("/api/admin/products",admin,asyncRoute(async(_req,res)=>res.json({products:(await Product.find().sort({name:1}).lean()).map(id)})));
+
+app.get("/api/admin/products/stats",admin,asyncRoute(async(_req,res)=>{
+  const [byStatus,byCategory,total,pendingSpecs]=await Promise.all([
+    Product.aggregate([{$group:{_id:{status:"$status",published:"$published"},count:{$sum:1}}}]),
+    Product.aggregate([{$group:{_id:"$category",count:{$sum:1}}},{$sort:{count:-1}}]),
+    Product.countDocuments({}),
+    Product.countDocuments({specsPending:true}),
+  ]);
+  const statusCount=status=>(byStatus.find(entry=>entry._id?.status===status)?.count||0);
+  const archived=statusCount("archived");
+  const draft=statusCount("draft");
+  /* Older records may predate the status field: fall back to `published`. */
+  const published=byStatus
+    .filter(entry=>entry._id?.status==="published"||(!entry._id?.status&&entry._id?.published===true))
+    .reduce((sum,entry)=>sum+entry.count,0);
+  res.setHeader("Cache-Control","no-store");
+  res.json({
+    total,
+    published,
+    draft,
+    archived,
+    pendingSpecs,
+    categories:byCategory.map(entry=>({slug:String(entry._id||"").toLowerCase(),count:entry.count})),
+    limits:PRODUCT_LIMITS,
+  });
+}));
+
+app.get("/api/admin/products/:id",admin,asyncRoute(async(req,res)=>{
+  const item=await findProductById(req.params.id);
+  if(!item)return res.status(404).json({error:"Product not found."});
+  res.setHeader("Cache-Control","no-store");
+  res.json({product:id(item.toObject())});
+}));
+
+app.post("/api/admin/products/:id/duplicate",admin,asyncRoute(async(req,res)=>{
+  const item=await findProductById(req.params.id);
+  if(!item)return res.status(404).json({error:"Product not found."});
+  const requested=slugifyProductName(req.body?.slug||"")||`${item.slug}-copy`;
+  let slug=requested,suffix=2;
+  while(await Product.exists({slug})){slug=`${requested}-${suffix}`.slice(0,120);suffix+=1;if(suffix>50)return res.status(409).json({error:"A unique slug could not be generated."})}
+  const payload=duplicateProductInput(item.toObject(),{slug});
+  const copy=await Product.create(payload);
+  res.status(201).json({ok:true,product:id(copy.toObject())});
+}));
+
+app.post("/api/admin/products",admin,asyncRoute(async(req,res)=>{
+  const body=req.body||{};
+  const {ok,errors,value}=normaliseProductPayload(body);
+  if(!ok)return res.status(400).json({error:errors[0]||"The product data is invalid.",details:errors,code:"VALIDATION_ERROR"});
+  const slug=slugifyProductName(value.slug||value.name);
+  if(!slug)return res.status(400).json({error:"A valid product slug is required."});
+  if(value.published===true&&!usableImageUrl(body.image))return res.status(400).json({error:"Upload a product image before publishing."});
+  if(await Product.exists({slug}))return res.status(409).json({error:"A product with this slug already exists."});
+  const item=await Product.create({...body,...value,slug});
+  res.status(201).json({ok:true,product:id(item.toObject())});
+}));
+
+/* Admin image / datasheet uploads (unchanged public contract). */
+app.post("/api/admin/products/upload-image",admin,imageUpload("image"),asyncRoute(async(req,res)=>{if(!req.file)return res.status(400).json({error:"A JPEG, PNG, WebP or AVIF image is required."});await validateImageBuffer(req.file.buffer,{allowedTypes:["image/jpeg","image/png","image/webp","image/avif"],maxBytes:8*1024*1024,label:"Product image"});if(!storageConfigured())return res.status(503).json({error:"Cloud storage is not configured."});const uploaded=await cloudUpload(Readable.from(req.file.buffer),{resource_type:"image",folder:"solarious/products",public_id:`product-${Date.now()}${extname(req.file.originalname)}`});res.status(201).json({ok:true,url:uploaded.secure_url,storageId:uploaded.public_id})}));
+
+app.post("/api/admin/products/datasheet-signature",admin,datasheetSignatureRateLimit,asyncRoute(async(req,res)=>{const fileName=safeFileName(req.body?.fileName),fileSize=Number(req.body?.fileSize),fileType=String(req.body?.fileType||"").toLowerCase();if(!fileName.toLowerCase().endsWith(".pdf")||fileType!=="application/pdf")return res.status(415).json({error:"Only PDF datasheets are allowed."});if(!Number.isFinite(fileSize)||fileSize<=0)return res.status(400).json({error:"The PDF is empty or its size is invalid."});if(fileSize>PRODUCT_DATASHEET_MAX_BYTES)return res.status(413).json({error:"Datasheet PDF must be 20 MB or smaller."});if(!cloudinaryConfigured)return res.status(503).json({error:"Cloud storage is not configured."});await verifyCloudinaryCredentials();res.json(createSignedRawUpload({folder:PRODUCT_DATASHEET_FOLDER,prefix:"datasheet"}))}));
+
+app.post("/api/admin/products/verify-datasheet",admin,asyncRoute(async(req,res)=>{const storageId=String(req.body?.storageId||""),submittedUrl=String(req.body?.url||""),fileName=safeFileName(req.body?.fileName),submittedSize=Number(req.body?.fileSize);if(!storageId.startsWith(`${PRODUCT_DATASHEET_FOLDER}/datasheet-`))return res.status(400).json({error:"The uploaded PDF has an invalid storage identifier."});if(!/^https:\/\/res\.cloudinary\.com\//i.test(submittedUrl))return res.status(400).json({error:"The uploaded PDF URL is invalid."});if(!fileName.toLowerCase().endsWith(".pdf")||!Number.isFinite(submittedSize)||submittedSize<=0||submittedSize>PRODUCT_DATASHEET_MAX_BYTES)return res.status(400).json({error:"The uploaded PDF metadata is invalid."});const stored=await cloudinary.api.resource(storageId,{resource_type:"raw"});if(!stored?.secure_url||Number(stored.bytes)<=0||Number(stored.bytes)>PRODUCT_DATASHEET_MAX_BYTES)return res.status(413).json({error:"The stored datasheet is empty or exceeds 20 MB."});const probe=await fetch(stored.secure_url,{headers:{Range:"bytes=0-4"}});if(!probe.ok)return res.status(502).json({error:"The stored datasheet could not be verified."});const signature=Buffer.from(await probe.arrayBuffer()).subarray(0,5).toString("ascii");if(signature!=="%PDF-"){await destroyUpload(storageId,{resource_type:"raw"}).catch(()=>{});return res.status(415).json({error:"The uploaded file is not a valid PDF document."});}res.json({ok:true,url:stored.secure_url,storageId,fileName,fileSize:Number(stored.bytes)})}));
+
+app.post("/api/admin/products/upload-datasheet",admin,(_req,res)=>res.status(410).json({error:"Use the secure direct PDF upload flow."}));
+
+/* Legacy slug-keyed update — kept for API compatibility. */
+app.put("/api/admin/products",admin,asyncRoute(async(req,res)=>{
+  const {slug,...update}=req.body||{};
+  if(!slug)return res.status(400).json({error:"Product slug is required."});
+  const existing=await Product.findOne({slug});
+  if(!existing)return res.status(404).json({error:"Product not found."});
+  const {ok,errors,value}=normaliseProductPayload(update,{partial:true});
+  if(!ok)return res.status(400).json({error:errors[0]||"The product data is invalid.",details:errors,code:"VALIDATION_ERROR"});
+  const guard=publishGuard(value,existing);
+  if(guard)return res.status(400).json({error:guard});
+  const item=await Product.findByIdAndUpdate(existing._id,{...update,...value},{new:true,runValidators:true});
+  if(existing.datasheetStorageId&&value.datasheetStorageId!==undefined&&value.datasheetStorageId!==existing.datasheetStorageId)await destroyProductAssets({datasheetStorageId:existing.datasheetStorageId});
+  if(existing.imageStorageId&&value.imageStorageId&&value.imageStorageId!==existing.imageStorageId)await destroyProductAssets({imageStorageId:existing.imageStorageId});
+  res.json({ok:true,product:id(item.toObject())});
+}));
+
+app.put("/api/admin/products/:id",admin,asyncRoute(async(req,res)=>{
+  const existing=await findProductById(req.params.id);
+  if(!existing)return res.status(404).json({error:"Product not found."});
+  const body=req.body||{};
+  const {ok,errors,value}=normaliseProductPayload(body,{partial:true});
+  if(!ok)return res.status(400).json({error:errors[0]||"The product data is invalid.",details:errors,code:"VALIDATION_ERROR"});
+  if(value.slug&&value.slug!==existing.slug&&await Product.exists({slug:value.slug,_id:{$ne:existing._id}}))return res.status(409).json({error:"A product with this slug already exists."});
+  const guard=publishGuard(value,existing);
+  if(guard)return res.status(400).json({error:guard});
+  const item=await Product.findByIdAndUpdate(existing._id,value,{new:true,runValidators:true});
+  if(existing.datasheetStorageId&&value.datasheetStorageId!==undefined&&value.datasheetStorageId!==existing.datasheetStorageId)await destroyProductAssets({datasheetStorageId:existing.datasheetStorageId});
+  if(existing.imageStorageId&&value.imageStorageId&&value.imageStorageId!==existing.imageStorageId)await destroyProductAssets({imageStorageId:existing.imageStorageId});
+  res.json({ok:true,product:id(item.toObject())});
+}));
+
+app.patch("/api/admin/products/:id",admin,asyncRoute(async(req,res)=>{
+  const existing=await findProductById(req.params.id);
+  if(!existing)return res.status(404).json({error:"Product not found."});
+  const body=req.body||{};
+  const action=String(body.action||"").trim().toLowerCase();
+  const actionStatus={publish:"published",unpublish:"draft",draft:"draft",archive:"archived"}[action];
+  if(action&&!actionStatus)return res.status(400).json({error:"Unsupported product action."});
+  const nextStatus=actionStatus||body.status;
+  if(!nextStatus)return res.status(400).json({error:"A status or action is required."});
+  const resolved=statusPatch(nextStatus);
+  if(!resolved.ok)return res.status(400).json({error:resolved.error});
+  const guard=publishGuard(resolved.value,existing);
+  if(guard)return res.status(400).json({error:guard});
+  const item=await Product.findByIdAndUpdate(existing._id,resolved.value,{new:true,runValidators:true});
+  res.json({ok:true,product:id(item.toObject())});
+}));
+
+const deleteProductRecord=async item=>{
+  await Product.deleteOne({_id:item._id});
+  await destroyProductAssets(item.toObject());
+};
+
+app.delete("/api/admin/products",admin,asyncRoute(async(req,res)=>{
+  const item=await Product.findOne({slug:String(req.query.slug||"")});
+  if(!item)return res.status(404).json({error:"Product not found."});
+  await deleteProductRecord(item);
+  res.json({ok:true});
+}));
+
+app.delete("/api/admin/products/:id",admin,asyncRoute(async(req,res)=>{
+  const item=await findProductById(req.params.id);
+  if(!item)return res.status(404).json({error:"Product not found."});
+  await deleteProductRecord(item);
+  res.json({ok:true});
+}));
 app.get("/api/resources",asyncRoute(async(_req,res)=>res.json({resources:(await Resource.find({published:true}).sort({displayOrder:1,createdAt:-1}).lean()).map(resource)})));
 app.get("/api/admin/resources",admin,asyncRoute(async(_req,res)=>res.json({resources:(await Resource.find().sort({displayOrder:1,createdAt:-1}).lean()).map(resource),categories:["Product Datasheets","Brochures","Warranty Documents","Certificates","Installation Guides","Maintenance Guides","Company Profile","Technical Documents"]})));
 app.post("/api/admin/resources/upload",admin,asyncRoute(async(req,res)=>{if(!storageConfigured())return res.status(503).json({error:"Storage is not configured."});const started=Date.now(),maximum=20*1024*1024,declared=Number(req.get("content-length")||0),fileType=(req.get("content-type")||"").split(";")[0],fileName=safeFileName(decodeURIComponent(req.get("x-file-name")||"document")),allowed=new Set(["application/pdf","image/png","image/jpeg","image/webp","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]);if(declared>maximum)return res.status(413).json({error:"File exceeds the 20 MB upload limit."});if(!allowed.has(fileType))return res.status(415).json({error:"Only PDF, PNG, JPEG, WebP, DOC, DOCX, XLS and XLSX files are allowed."});let size=0,prefix=Buffer.alloc(0);const inspect=new Transform({transform(chunk,_encoding,done){size+=chunk.length;if(size>maximum)return done(serviceError("File exceeds the 20 MB upload limit.","validation",413));if(prefix.length<16)prefix=Buffer.concat([prefix,chunk]).subarray(0,16);done(null,chunk)}}),storageStarted=Date.now(),result=await cloudUpload(req.pipe(inspect),{resource_type:"raw",folder:"solarious/resources",public_id:`${Date.now()}-${fileName}`}),storageMs=Date.now()-storageStarted;if(!size)return res.status(400).json({error:"The uploaded file is empty."});const hex=prefix.toString("hex"),actualValid=fileType==="application/pdf"?prefix.subarray(0,5).toString("ascii")==="%PDF-":fileType==="image/png"?hex.startsWith("89504e470d0a1a0a"):fileType==="image/jpeg"?hex.startsWith("ffd8ff"):fileType==="image/webp"?prefix.subarray(0,4).toString("ascii")==="RIFF"&&prefix.subarray(8,12).toString("ascii")==="WEBP":fileType.includes("openxmlformats")?prefix.subarray(0,2).toString("ascii")==="PK":hex.startsWith("d0cf11e0a1b11ae1");if(!actualValid){await destroyUpload(result.public_id,{resource_type:"raw"}).catch(()=>{});return res.status(415).json({error:"The file contents do not match the selected document type."});}res.status(201).json({upload:{key:result.public_id,fileName,fileType,fileSize:size,fileUrl:result.secure_url,storageId:result.public_id},timing:{storageMs,totalMs:Date.now()-started}})}));
@@ -242,6 +533,17 @@ app.delete("/api/admin/gallery/upload",admin,asyncRoute(async(req,res)=>{const s
 app.patch("/api/admin/gallery/reorder",admin,asyncRoute(async(req,res)=>{const items=Array.isArray(req.body?.items)?req.body.items:[];if(!items.length||items.length>200)return res.status(400).json({error:"Provide one or more gallery items to reorder."});await Promise.all(items.map((item,index)=>GalleryImage.findByIdAndUpdate(item.id,{displayOrder:Math.max(0,Number(item.displayOrder??index)||0)})));res.json({ok:true})}));
 app.patch("/api/admin/gallery/:id",admin,asyncRoute(async(req,res)=>{const existing=await GalleryImage.findById(req.params.id);if(!existing)return res.status(404).json({error:"Gallery image not found."});const values=galleryValues(req.body,existing),item=await GalleryImage.findByIdAndUpdate(existing._id,values,{new:true,runValidators:true});if(values.storageId!==existing.storageId)await destroyUpload(existing.storageId).catch(error=>console.error("Gallery replacement cleanup failed",{message:error?.message||"Unknown error"}));res.json({ok:true,image:galleryImage(item.toObject())})}));
 app.delete("/api/admin/gallery/:id",admin,asyncRoute(async(req,res)=>{const item=await GalleryImage.findByIdAndDelete(req.params.id);if(!item)return res.status(404).json({error:"Gallery image not found."});await destroyUpload(item.storageId).catch(error=>console.error("Gallery deletion cleanup failed",{message:error?.message||"Unknown error"}));res.json({ok:true})}));
+const teamMediaFolder="solarious/team";
+/* Team members: the admin dashboard and the Team Management panel both read
+   /api/admin/team, and the About Us page reads the public /api/team feed. */
+const teamPhotoValues=async(req)=>{if(!req.file)return null;if(!storageConfigured())throw serviceError("Cloud storage is not configured.","storage_configuration",503);const item=await cloudUpload(Readable.from(req.file.buffer),{resource_type:"image",folder:teamMediaFolder,public_id:`team-${Date.now()}-${randomUUID()}${extname(req.file.originalname)}`,transformation:[{width:900,height:900,crop:"limit",quality:"auto:good",fetch_format:"auto"}]});return{photoUrl:item.secure_url,photoPublicId:item.public_id}};
+const teamValues=(body)=>{const name=safeText(body.name),designation=safeText(body.designation),shortInfo=safeText(body.shortInfo);if(name.length<2)throw serviceError("Enter the team member's full name.","validation",400);if(!designation)throw serviceError("Enter a designation for the team member.","validation",400);if(shortInfo.length<2)throw serviceError("Enter short information about the team member.","validation",400);const email=safeText(body.email).toLowerCase();if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw serviceError("Enter a valid email address.","validation",400);return{name:name.slice(0,120),designation:designation.slice(0,160),shortInfo:shortInfo.slice(0,1200),linkedinUrl:validHttpUrl(body.linkedinUrl),email:email.slice(0,180),displayOrder:Math.max(0,Number(body.displayOrder)||0),isActive:body.isActive===true||body.isActive==="true"}};
+app.get("/api/team",asyncRoute(async(_req,res)=>{res.setHeader("Cache-Control","no-store");res.json({members:(await TeamMember.find({isActive:true}).sort({displayOrder:1,createdAt:-1}).lean()).map(teamMember)})}));
+app.get("/api/admin/team",admin,teamRoute("list",async(_req,res)=>{res.setHeader("Cache-Control","no-store");res.json({members:(await TeamMember.find().sort({displayOrder:1,createdAt:-1}).lean()).map(teamMember)})}));
+app.post("/api/admin/team",admin,teamPhoto,teamRoute("create",async(req,res)=>{const values=teamValues(req.body);const photo=await teamPhotoValues(req);const item=await TeamMember.create({...values,photoUrl:photo?.photoUrl||"/team-avatar.svg",photoPublicId:photo?.photoPublicId||""});res.status(201).json({ok:true,member:teamMember(item.toObject())})}));
+app.put("/api/admin/team/:id",admin,teamPhoto,teamRoute("update",async(req,res)=>{const existing=await TeamMember.findById(req.params.id);if(!existing)return res.status(404).json({error:"Team member not found."});const values=teamValues(req.body);const photo=await teamPhotoValues(req);const item=await TeamMember.findByIdAndUpdate(existing._id,{...values,...(photo||{})},{new:true,runValidators:true});if(photo&&existing.photoPublicId&&photo.photoPublicId!==existing.photoPublicId)await destroyUpload(existing.photoPublicId).catch(()=>{});res.json({ok:true,member:teamMember(item.toObject())})}));
+app.patch("/api/admin/team/:id",admin,teamRoute("toggle",async(req,res)=>{const existing=await TeamMember.findById(req.params.id);if(!existing)return res.status(404).json({error:"Team member not found."});const patch={};if(req.body?.isActive!==undefined)patch.isActive=req.body.isActive===true||req.body.isActive==="true";if(req.body?.displayOrder!==undefined)patch.displayOrder=Math.max(0,Number(req.body.displayOrder)||0);if(!Object.keys(patch).length)return res.status(400).json({error:"No team member changes were supplied."});const item=await TeamMember.findByIdAndUpdate(existing._id,patch,{new:true,runValidators:true});res.json({ok:true,member:teamMember(item.toObject())})}));
+app.delete("/api/admin/team/:id",admin,teamRoute("delete",async(req,res)=>{const item=await TeamMember.findByIdAndDelete(req.params.id);if(!item)return res.status(404).json({error:"Team member not found."});await destroyUpload(item.photoPublicId).catch(()=>{});res.json({ok:true})}));
 app.get("/api/admin/creative-settings",admin,asyncRoute(async(_req,res)=>{const row=await Setting.findOne({key:"creativeBrand"}).lean(),value=row?.value||{company_name:"Solarious Energy",email:"info@solariousenergy.in",mobile:"",website:"www.solariousenergy.in",default_cta:"Contact Us Today",logo_url:"/solarious-logo.png",show_email:1,show_mobile:0,show_website:1};res.json({settings:value})}));
 app.post("/api/admin/creative-settings",admin,imageUpload("logo"),asyncRoute(async(req,res)=>{const previous=(await Setting.findOne({key:"creativeBrand"}).lean())?.value||{};let logoUrl=previous.logo_url||"/solarious-logo.png",logoStorageId=previous.logo_storage_id||"";if(req.file){await validateImageBuffer(req.file.buffer,{allowedTypes:["image/jpeg","image/png","image/webp","image/avif"],maxBytes:8*1024*1024,label:"Brand logo"});if(!storageConfigured())return res.status(503).json({error:"Storage is not configured."});const uploaded=await cloudUpload(Readable.from(req.file.buffer),{resource_type:"image",folder:"solarious/branding",public_id:`logo-${Date.now()}${extname(req.file.originalname)}`});logoUrl=uploaded.secure_url;logoStorageId=uploaded.public_id}const value={company_name:String(req.body.companyName||"").trim(),email:String(req.body.email||"").trim(),mobile:String(req.body.mobile||"").trim(),website:String(req.body.website||"").trim(),default_cta:String(req.body.defaultCta||"Contact Us Today").trim(),logo_url:logoUrl,logo_storage_id:logoStorageId,show_email:req.body.showEmail==="true"?1:0,show_mobile:req.body.showMobile==="true"?1:0,show_website:req.body.showWebsite==="true"?1:0};if(!value.company_name||!value.email)return res.status(400).json({error:"Company name and email are required."});await Setting.findOneAndUpdate({key:"creativeBrand"},{value},{upsert:true});res.json({ok:true})}));
 const campaignTypes=["Residential rooftop solar","Commercial solar","Industrial solar","Electricity savings","Green environment","Solar technology","Government subsidy awareness"];

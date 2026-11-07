@@ -51,8 +51,10 @@ a.whatsapp-cta.whatsapp-link:hover {
   justify-content: flex-start;
   width: max-content;
   max-width: 100%;
+  min-height: 44px;
+  align-items: center;
   color: #fff;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -87,7 +89,7 @@ a.whatsapp-cta.whatsapp-link:hover {
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  .premium-whatsapp-link { font-size: 0.7rem; }
+  .premium-whatsapp-link { font-size: 0.75rem; }
   .premium-cta-links .premium-whatsapp-link { flex: 1 1 100%; }
 }
 

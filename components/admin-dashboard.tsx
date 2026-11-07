@@ -43,6 +43,17 @@ const navItems:AdminNavItem<Tab>[]=[
 const titleFor=(tab:Tab)=>navItems.find(item=>item.id===tab)?.label||"Dashboard";
 const dateText=(value?:string)=>value?new Date(value).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—";
 
+type FeedKey="inquiries"|"products"|"gallery"|"events"|"team"|"resources";
+type DashboardFeed={inquiries?:Inquiry[];products?:ProductSummary[];images?:unknown[];events?:EventSummary[];members?:unknown[];resources?:unknown[]};
+const DASHBOARD_FEEDS:{key:FeedKey;label:string;path:string}[]=[
+  {key:"inquiries",label:"Enquiries",path:"/api/admin/inquiries"},
+  {key:"products",label:"Products",path:"/api/admin/products"},
+  {key:"gallery",label:"Gallery images",path:"/api/admin/gallery"},
+  {key:"events",label:"Events",path:"/api/admin/events"},
+  {key:"team",label:"Team members",path:"/api/admin/team"},
+  {key:"resources",label:"Resources",path:"/api/admin/resources"},
+];
+
 export default function AdminDashboard({adminName}:{adminName:string}){
   const [tab,setTab]=useState<Tab>("dashboard"),[collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
   const [inquiries,setInquiries]=useState<Inquiry[]>([]),[overview,setOverview]=useState<Overview>({products:[],gallery:0,events:[],team:0,resources:0});
@@ -50,7 +61,17 @@ export default function AdminDashboard({adminName}:{adminName:string}){
   const [page,setPage]=useState(1),[loading,setLoading]=useState(true),[notice,setNotice]=useState(""),[error,setError]=useState("");
   const [selected,setSelected]=useState<Inquiry|null>(null),[deleteTarget,setDeleteTarget]=useState<Inquiry|null>(null),[deleting,setDeleting]=useState(false);
 
-  const load=useCallback(async()=>{setLoading(true);setError("");try{const responses=await Promise.all([adminFetch("/api/admin/inquiries"),adminFetch("/api/admin/products"),adminFetch("/api/admin/gallery"),adminFetch("/api/admin/events"),adminFetch("/api/admin/team"),adminFetch("/api/admin/resources")]);for(const response of responses)if(!response.ok)throw await apiError(response,"Dashboard data could not be loaded");const[iq,pq,gq,eq,tq,rq]=await Promise.all(responses.map(response=>response.json()));setInquiries(iq.inquiries||[]);setOverview({products:pq.products||[],gallery:(gq.images||[]).length,events:eq.events||[],team:(tq.members||[]).length,resources:(rq.resources||[]).length})}catch(cause){setError(cause instanceof Error?cause.message:"Dashboard data could not be loaded.")}finally{setLoading(false)}},[]);
+  /* One unreachable feed used to reject the whole Promise.all and replace the
+     dashboard with a single error banner. Load each feed independently so the
+     panels that did respond still render, and name the ones that failed. */
+  const load=useCallback(async()=>{setLoading(true);setError("");try{
+    const settled=await Promise.allSettled(DASHBOARD_FEEDS.map(async feed=>{const response=await adminFetch(feed.path);if(!response.ok)throw await apiError(response,`${feed.label} could not be loaded`);return{key:feed.key,payload:await response.json() as DashboardFeed}}));
+    const payloads:Partial<Record<FeedKey,DashboardFeed>>={},failures:string[]=[];
+    for(const entry of settled){if(entry.status==="fulfilled")payloads[entry.value.key]=entry.value.payload;else failures.push(entry.reason instanceof Error?entry.reason.message:String(entry.reason))}
+    setInquiries(payloads.inquiries?.inquiries||[]);
+    setOverview({products:payloads.products?.products||[],gallery:(payloads.gallery?.images||[]).length,events:payloads.events?.events||[],team:(payloads.team?.members||[]).length,resources:(payloads.resources?.resources||[]).length});
+    if(failures.length)setError(`Some dashboard data could not be loaded. ${failures.join(" ")}`);
+  }catch(cause){setError(cause instanceof Error?cause.message:"Dashboard data could not be loaded.")}finally{setLoading(false)}},[]);
   useEffect(()=>{const timer=window.setTimeout(()=>void load(),0);return()=>window.clearTimeout(timer)},[load]);
 
   const filtered=useMemo(()=>{const needle=query.trim().toLowerCase();return inquiries.filter(item=>{const matchesText=!needle||`${item.name} ${item.company} ${item.email} ${item.phone} ${item.product} ${item.location}`.toLowerCase().includes(needle),itemSource=item.kind==="quote"?"quote":"contact",matchesDate=!dateFilter||String(item.created_at||"").slice(0,10)===dateFilter;return matchesText&&(!source||itemSource===source)&&(!statusFilter||item.status===statusFilter)&&matchesDate}).sort((a,b)=>(sort==="newest"?-1:1)*(new Date(a.created_at).getTime()-new Date(b.created_at).getTime()))},[inquiries,query,source,statusFilter,dateFilter,sort]);

@@ -31,6 +31,8 @@ import "./compliance-rfq.css";
 /* Final layer: the navy-and-gold Solarious design system. Loaded last so it
    re-skins every public surface without touching legacy markup. */
 import "./solarious-ui.css";
+/* Product system: scoped .ps-* design layer for /products and product detail. */
+import "./product-system.css";
 /* Future-facing homepage layer. Loaded after the shared system so the
    cinematic charcoal/yellow compositions can refine the homepage only. */
 import "./future-home.css";

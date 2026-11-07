@@ -26,8 +26,14 @@ export async function apiError(
         return error;
       }
     } else {
-      const message = (await response.text()).trim();
-      if (message) return new Error(message);
+      const raw = (await response.text()).trim();
+      /* Never surface a raw HTML error page (Express renders one for an
+         unmatched route) — it would be shown verbatim in the admin banner. */
+      const looksLikeMarkup = /<!doctype|<html|<\/body>/i.test(raw);
+      const message = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      if (message && !looksLikeMarkup && message.length <= 200) {
+        return new Error(message);
+      }
     }
   } catch {
     // Fall through to the status-aware fallback.

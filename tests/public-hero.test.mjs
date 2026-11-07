@@ -112,7 +112,7 @@ test("all public pages route their hero through the shared system", async () => 
     "app/about/page.tsx": /<PageShell/,
     "app/contact/page.tsx": /<PageShell/,
     "app/gallery/page.tsx": /<PageShell/,
-    "app/products/page.tsx": /<PageShell/,
+    "app/products/page.tsx": /<ProductListingView/,
     "app/services/page.tsx": /<SectionPage/,
     "app/quality/page.tsx": /<SectionPage/,
     "app/sustainability/page.tsx": /<SectionPage/,
@@ -124,7 +124,7 @@ test("all public pages route their hero through the shared system", async () => 
     "app/privacy-policy/page.tsx": /<InnerPageHero/,
     "app/terms/page.tsx": /<InnerPageHero/,
     "app/not-found.tsx": /<InnerPageHero/,
-    "components/product-detail.tsx": /<InnerPageHero/,
+    "app/products/[category]/[slug]/page.tsx": /<ProductDetailView/,
     "components/solar-calculator.tsx": /<ToolPageShell/,
     "components/module-recommender.tsx": /<ToolPageShell/,
   };
@@ -134,6 +134,47 @@ test("all public pages route their hero through the shared system", async () => 
     assert.match(source, expected, `${file} must use the shared hero system`);
     assert.doesNotMatch(source, /className="events-hero|className="tool-hero|<h1>|<h1 /, `${file} must not keep a bespoke H1 hero`);
   }
+
+  /* The product catalogue deliberately uses its own premium hero layer
+     (app/product-system.css). Keep the same asset and image-optimisation
+     guarantees the shared hero provides. */
+  const [listing, detail, productCss, catalogue] = await Promise.all([
+    read("components/product-listing-view.tsx"),
+    read("components/product-detail-view.tsx"),
+    read("app/product-system.css"),
+    read("data/product-catalog.ts"),
+  ]);
+  const layoutSource = await read("app/layout.tsx");
+  assert.match(layoutSource, /import "\.\/product-system\.css"/);
+  assert.match(listing, /from "next\/image"/);
+  assert.match(listing, /<Image[\s\S]{0,200}sizes=/);
+  assert.match(listing, /priority/);
+  assert.match(listing, /ps-hero-banner/);
+  assert.match(detail, /ProductImageGallery/);
+  assert.match(productCss, /\.ps-hero-banner\s*\{[\s\S]*?grid-template-columns/);
+  assert.match(productCss, /prefers-reduced-motion: reduce/);
+  /* The premium layer has to cover every width the brief calls out, down to
+     320px, and expose the navy band, the sticky tab strip and the three hero
+     specification cards. */
+  for (const width of [1200, 1080, 900, 768, 620, 430, 380, 320]) {
+    assert.match(
+      productCss,
+      new RegExp(`@media \\(max-width: ${width}px\\)`),
+      `product CSS must cover the ${width}px breakpoint`,
+    );
+  }
+  assert.match(productCss, /\.ps-band\s*\{/);
+  assert.match(productCss, /\.ps-tabbar\s*\{/);
+  assert.match(productCss, /\.ps-hero-cards\s*\{/);
+  assert.match(detail, /ProductTabNav/);
+  assert.match(detail, /ps-hero-cards/);
+  const categoryImages = [...catalogue.matchAll(/image:\s*"(\/[^"]+)"/g)].map((match) => match[1]);
+  assert.ok(categoryImages.length >= 4, "expected one image per product category");
+  await Promise.all(
+    [...new Set(categoryImages)].map((image) =>
+      assert.doesNotReject(access(publicPath(image.replace(/^\//, ""))), `Missing product image: ${image}`),
+    ),
+  );
 
   const [pageShell, sectionPage, toolPageShell] = await Promise.all([
     read("components/page-shell.tsx"),
