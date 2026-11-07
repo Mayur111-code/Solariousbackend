@@ -61,7 +61,7 @@
 .certification-card p{margin:0 0 8px;color:#5c6761;font-size:.82rem;line-height:1.6}
 .certification-card .audit-relevance{color:#455a4e}
 .certification-meta{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 0}
-.certification-meta dt{color:#8a5a1e;font-size:.64rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+.certification-meta dt{color:#8a5a1e;font-size:.7rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
 .certification-meta dd{margin:2px 0 0;font-size:.8rem;font-weight:700}
 .certification-document{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:9px 12px;border:1px solid #cfe0d6;border-radius:8px;background:#fff;color:#1f5e42;font-size:.8rem;font-weight:800;text-decoration:none}
 .certification-document:hover{background:#f2faf5}

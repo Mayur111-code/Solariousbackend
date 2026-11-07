@@ -53,6 +53,14 @@ export default function HeroSlider({ banners }: { banners: HeroBanner[] }) {
   const current = banners[active] ?? banners[0];
   if (!current) return null;
 
+  // A headline written as two sentences becomes a deliberate two-line
+  // composition (e.g. "Beyond Energy." / "Towards a Sustainable Future.")
+  // instead of an accidental wrap. Single-sentence headlines are untouched.
+  const headlineParts = current.headline.split(/(?<=\.)\s+/).filter(Boolean);
+  const headline = headlineParts.length > 1 && current.headline.includes(". ")
+    ? <>{headlineParts[0]}<br />{headlineParts.slice(1).join(" ")}</>
+    : current.headline;
+
   const goTo = (index: number) => {
     setActive((index + banners.length) % banners.length);
   };
@@ -109,7 +117,7 @@ export default function HeroSlider({ banners }: { banners: HeroBanner[] }) {
           >
             <Image
               src={banner.image_url || "/hero-solar-1.webp"}
-              alt={index === active ? banner.alt_text : ""}
+              alt={index === active ? banner.alt_text || `${banner.headline} — Solarious solar installation` : ""}
               fill
               sizes="100vw"
               priority={index === 0}
@@ -122,18 +130,18 @@ export default function HeroSlider({ banners }: { banners: HeroBanner[] }) {
       </div>
       <div className="hero-shade" />
       <div className="hero-slider-content">
-        <p className="eyebrow hero-eyebrow"><span /> Advanced solar module manufacturing</p>
-        <h1 key={`h-${current.id}`}>{current.headline}</h1>
+        <p className="eyebrow hero-eyebrow"><span /> Powering a brighter tomorrow</p>
+        <h1 key={`h-${current.id}`}>{headline}</h1>
         <p className="hero-slider-lede" key={`p-${current.id}`}>{current.supporting_text}</p>
         <div className="hero-actions">
           {/* Primary: the catalogue. Secondary: the single enquiry flow. Both
               reuse existing routes — no duplicated products or quote pages. */}
           <Link className="button hero-primary" href="/products">
-            Explore Products
+            Explore Solar Solutions
             <ArrowRight size={18} />
           </Link>
           <Link className="button hero-outline" href="/quote">
-            Get a Quote
+            Get a Free Consultation
           </Link>
         </div>
         <div className="hero-highlights">
@@ -152,6 +160,10 @@ export default function HeroSlider({ banners }: { banners: HeroBanner[] }) {
           <span><strong>Events &amp; Activities</strong><small>Explore our latest events, exhibitions &amp; activities</small></span>
           <ArrowRight size={15} />
         </Link>
+      </div>
+      <div className="hero-scroll-cue" aria-hidden="true">
+        <span>Scroll to explore</span>
+        <i />
       </div>
       {banners.length > 1 && (
         <div className="hero-dots" role="group" aria-label="Choose slide">

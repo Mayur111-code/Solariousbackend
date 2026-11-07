@@ -18,10 +18,10 @@ export default function PremiumProductShowcase({
 
   return (
     <>
-      <div className="premium-product-showcase">
-        {products.map((product) => (
-          <article className="product-showcase-card" key={product.slug}>
-            <div className="product-showcase-media">
+      <div className="premium-product-showcase" data-reveal-group>
+        {products.map((product, index) => (
+          <article className="product-showcase-card" key={product.slug} data-reveal-item>
+            <div className="product-showcase-media" data-cinema>
               <Image
                 src={product.image || "/utility-solar.webp"}
                 alt={`${product.name} solar module application`}
@@ -30,6 +30,9 @@ export default function PremiumProductShowcase({
               />
             </div>
             <div className="product-showcase-body">
+              <span className="product-showcase-index">
+                {String(index + 1).padStart(2, "0")}
+              </span>
               <h3>{product.name}</h3>
               <p className="product-showcase-tech">{product.technology}</p>
               <p>{product.summary}</p>
