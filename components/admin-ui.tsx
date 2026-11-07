@@ -1,17 +1,26 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Bell, ChevronLeft, ChevronRight, LogOut, Menu, X } from "lucide-react";
 
 export type AdminNavItem<T extends string = string> = { id: T; label: string; icon: LucideIcon };
 
 export function AdminSidebar<T extends string>({ items, current, onSelect, collapsed, mobileOpen, onCollapse, onMobileClose }: { items: AdminNavItem<T>[]; current: T; onSelect: (id: T) => void; collapsed: boolean; mobileOpen: boolean; onCollapse: () => void; onMobileClose: () => void }) {
-  return <><aside className={`enterprise-admin-sidebar ${collapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}><div className="admin-sidebar-brand"><Image src="/solarious-logo.png" width={210} height={70} alt="Solarious Energy" priority/><button type="button" className="admin-mobile-close" onClick={onMobileClose} aria-label="Close admin navigation"><X/></button></div><nav aria-label="Admin modules">{items.map(({id,label,icon:Icon})=><button key={id} type="button" className={current===id?"active":""} onClick={()=>{onSelect(id);onMobileClose()}} aria-current={current===id?"page":undefined}><Icon/><span>{label}</span></button>)}</nav><a className="admin-sidebar-logout" href="/signout-with-chatgpt?return_to=/"><LogOut/><span>Logout</span></a><button type="button" className="admin-collapse-button" onClick={onCollapse} aria-label={collapsed?"Expand sidebar":"Collapse sidebar"}>{collapsed?<ChevronRight/>:<ChevronLeft/>}</button></aside>{mobileOpen&&<button className="admin-drawer-overlay" type="button" onClick={onMobileClose} aria-label="Close admin navigation"/>}</>;
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onMobileClose();
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [mobileOpen, onMobileClose]);
+  return <><aside id="admin-sidebar" className={`enterprise-admin-sidebar ${collapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`} aria-label="Admin navigation"><div className="admin-sidebar-brand"><Image src="/solarious-logo.png" width={210} height={70} alt="Solarious Energy" priority/><button type="button" className="admin-mobile-close" onClick={onMobileClose} aria-label="Close admin navigation"><X/></button></div><nav aria-label="Admin modules">{items.map(({id,label,icon:Icon})=><button key={id} type="button" className={current===id?"active":""} onClick={()=>{onSelect(id);onMobileClose()}} aria-current={current===id?"page":undefined} aria-label={label}><Icon/><span>{label}</span></button>)}</nav><a className="admin-sidebar-logout" href="/signout-with-chatgpt?return_to=/" aria-label="Logout"><LogOut/><span>Logout</span></a><button type="button" className="admin-collapse-button" onClick={onCollapse} aria-label={collapsed?"Expand sidebar":"Collapse sidebar"}>{collapsed?<ChevronRight/>:<ChevronLeft/>}</button></aside>{mobileOpen&&<button className="admin-drawer-overlay" type="button" onClick={onMobileClose} aria-label="Close admin navigation"/>}</>;
 }
 
 export function AdminTopbar({ title, adminName, onMenu, onRefresh }: { title: string; adminName: string; onMenu: () => void; onRefresh?: () => void }) {
-  return <header className="enterprise-admin-topbar"><button type="button" className="admin-menu-trigger" onClick={onMenu} aria-label="Open admin navigation"><Menu/></button><div><p>Solarious Energy / Admin</p><strong>{title}</strong></div><div className="admin-topbar-tools"><button type="button" className="admin-notification" aria-label="Notifications" title="Notifications"><Bell/><span/></button>{onRefresh&&<button type="button" className="admin-refresh-text" onClick={onRefresh}>Refresh data</button>}<span className="admin-avatar" aria-hidden="true">{adminName.trim().charAt(0).toUpperCase()||"A"}</span><div className="admin-profile"><strong>{adminName}</strong><small>Administrator</small></div></div></header>;
+  return <header className="enterprise-admin-topbar"><button type="button" className="admin-menu-trigger" onClick={onMenu} aria-label="Open admin navigation" aria-controls="admin-sidebar"><Menu/></button><div><p>Solarious Energy / Admin</p><strong>{title}</strong></div><div className="admin-topbar-tools"><button type="button" className="admin-notification" aria-label="Notifications" title="Notifications"><Bell/><span/></button>{onRefresh&&<button type="button" className="admin-refresh-text" onClick={onRefresh}>Refresh data</button>}<span className="admin-avatar" aria-hidden="true">{adminName.trim().charAt(0).toUpperCase()||"A"}</span><div className="admin-profile"><strong>{adminName}</strong><small>Administrator</small></div></div></header>;
 }
 
 export function AdminPageHeader({ eyebrow="Control centre", title, description, actions }: { eyebrow?: string; title: string; description: string; actions?: React.ReactNode }) {

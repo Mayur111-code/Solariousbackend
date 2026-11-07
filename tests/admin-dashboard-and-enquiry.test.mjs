@@ -7,7 +7,7 @@ const read=path=>readFile(new URL(`../${path}`,import.meta.url),"utf8");
 test("homepage quote buttons open the shared accessible popup",async()=>{
   const[header,page,modal,form]=await Promise.all([read("components/site-header.tsx"),read("app/page.tsx"),read("components/lead-form-modal.tsx"),read("components/quote-popup-form.tsx")]);
   assert.match(header,/LeadFormModal label="Get a quote"/);
-  assert.match(page,/LeadFormModal label="Get a quote"/);
+  assert.match(page,/LeadFormModal label="Get a Free Consultation"/);
   assert.match(modal,/DialogContent className="quote-popup-dialog"/);
   assert.match(form,/kind: "quote"/);
   assert.match(form,/Idempotency-Key/);

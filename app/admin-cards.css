@@ -42,7 +42,7 @@
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.94);
   color: var(--ink-700);
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.06em;
 }
@@ -73,7 +73,7 @@
 }
 .admin-thumb-preview img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
 .admin-thumb-preview.is-empty { gap: 2px; background: var(--surface-100); }
-.admin-thumb-preview small { font-size: 0.62rem; font-weight: 700; }
+.admin-thumb-preview small { font-size: 0.7rem; font-weight: 700; }
 
 /* Shared card chrome */
 .admin-card-status {
@@ -86,7 +86,7 @@
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.95);
   box-shadow: var(--shadow-sm);
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   line-height: 1.5;
@@ -142,7 +142,7 @@
   gap: 6px;
   margin: 0 0 8px;
   color: var(--solar-700) !important;
-  font-size: 0.68rem !important;
+  font-size: 0.72rem !important;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -186,7 +186,7 @@
 .admin-gallery-category {
   margin: 0 0 6px;
   color: var(--solar-700);
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -208,12 +208,12 @@
   margin: auto 0 0;
   padding-top: 10px;
   border-top: 1px solid var(--line);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
 }
 .admin-gallery-meta > div { display: grid; grid-template-columns: minmax(55px, 0.45fr) minmax(0, 1fr); gap: 8px; }
 .admin-gallery-meta dt { color: var(--ink-700); font-weight: 800; }
 .admin-gallery-meta dd { margin: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.admin-gallery-card .admin-card-status { font-size: 0.58rem; }
+.admin-gallery-card .admin-card-status { font-size: 0.7rem; }
 .admin-gallery-card > footer { border-top: 1px solid var(--line); padding: 10px; }
 .admin-gallery-card > footer .icon-button { width: 34px; height: 34px; }
 
@@ -237,7 +237,7 @@
 .admin-product-grid .admin-card-status,
 .admin-gallery-card .admin-card-status {
   color: var(--ink-700);
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;

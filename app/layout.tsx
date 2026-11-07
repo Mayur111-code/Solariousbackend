@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import "@fontsource-variable/inter/wght.css";
+import "@fontsource-variable/space-grotesk/wght.css";
 import "./globals.css";
 import "./resource-admin.css";
 import "./form-fixes.css";
@@ -29,6 +31,9 @@ import "./compliance-rfq.css";
 /* Final layer: the navy-and-gold Solarious design system. Loaded last so it
    re-skins every public surface without touching legacy markup. */
 import "./solarious-ui.css";
+/* Future-facing homepage layer. Loaded after the shared system so the
+   cinematic charcoal/yellow compositions can refine the homepage only. */
+import "./future-home.css";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import FloatingAssistant from "@/components/floating-assistant";

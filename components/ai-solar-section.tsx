@@ -43,14 +43,14 @@ export default function AiSolarSection() {
     <div className="ai-section-grid">
       <div className="ai-visual-wrap">
         <Image className="ai-visual" src="/ai-solar-intelligence.webp" alt="Solar panel installation with subtle digital energy monitoring and performance analytics" fill sizes="(max-width: 900px) 100vw, 48vw" />
-        <div className="analytics-panel" aria-hidden="true"><span className="analytics-kicker">LIVE INTELLIGENCE</span><strong>Performance overview</strong><div className="analytics-chart"><i /><i /><i /><i /><i /><i /><i /></div><div className="analytics-meta"><span>Generation</span><span>Monitoring active</span></div></div>
-        <div className="data-node node-one" aria-hidden="true"><Sparkles size={15} /> Predictive insights</div>
-        <div className="data-node node-two" aria-hidden="true">Smart grid connected</div>
+        <div className="analytics-panel" aria-hidden="true"><span className="analytics-kicker">PLANNING INTELLIGENCE</span><strong>Project overview</strong><div className="analytics-chart"><i /><i /><i /><i /><i /><i /><i /></div><div className="analytics-meta"><span>Digital tools</span><span>Guided estimates</span></div></div>
+        <div className="data-node node-one" aria-hidden="true"><Sparkles size={15} /> Guided product fit</div>
+        <div className="data-node node-two" aria-hidden="true">Transparent estimates</div>
       </div>
       <div className="ai-copy">
-        <p className="eyebrow"><span /> AI-powered solar technology</p>
-        <h2 id="ai-solar-heading">Smarter Solar.<br /><em>Powered by Intelligence.</em></h2>
-        <p>Combine advanced solar technology with intelligent digital tools to help customers understand module technologies, compare products, estimate project requirements, and connect with the right Solarious solution.</p>
+        <p className="eyebrow"><span /> Digital solar intelligence</p>
+        <h2 id="ai-solar-heading">Your Energy.<br /><em>Your Control.</em></h2>
+        <p>Solarious does not currently offer a live customer monitoring app. Instead, these verified planning tools help you understand module technologies, compare options, estimate project requirements and connect with the right technical team.</p>
         <div className="ai-assurance"><Sparkles size={18} /><span><strong>Engineering assistance, not guesswork</strong><small>Digital guidance uses approved information and clearly identifies when technical confirmation is required.</small></span></div>
       </div>
     </div>

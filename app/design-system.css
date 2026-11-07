@@ -4,36 +4,36 @@
 :root {
   color-scheme: light;
 
-  --font-sans: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-accent: Georgia, "Times New Roman", serif;
+  --font-sans: "Inter Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Space Grotesk Variable", "Segoe UI", system-ui, sans-serif;
+  --font-accent: "Inter Variable", Georgia, serif;
 
-  --ink-900: #10241c;
-  --ink-800: #17201c;
-  --ink-700: #30443c;
-  --muted: #5b6762;
-  --line: #dce4e0;
-  --line-strong: #c4d0c9;
+  --ink-900: #101116;
+  --ink-800: #17181f;
+  --ink-700: #2e3038;
+  --muted: #5b5f6b;
+  --line: #e6e6e0;
+  --line-strong: #cfcfc7;
   --surface-0: #ffffff;
-  --surface-50: #f7f9f8;
-  --surface-100: #eef2f0;
-  --surface-dark: #112e26;
+  --surface-50: #f4f4f1;
+  --surface-100: #eaeaE4;
+  --surface-dark: #101116;
 
-  --solar-100: #fff4e7;
-  --solar-500: #ee7b16;
-  --solar-600: #b85a06;
-  --solar-700: #8f4605;
-  --gold: #f4b942;
+  --solar-100: #fffbe0;
+  --solar-500: #f5d329;
+  --solar-600: #6b5600;
+  --solar-700: #4f4100;
+  --gold: #f5d329;
   --green-700: #0b6b4f;
-  --green-900: #061b36;
+  --green-900: #101116;
   --whatsapp: #0b7048;
   --whatsapp-dark: #075e54;
 
   /* Existing branding variables are re-tokenised for accessible white-on-orange text. */
-  --orange: #b85a06;
-  --orange-dark: #8f4605;
-  --primary: #b85a06;
-  --ring: #0b6b4f;
+  --orange: #8a6a00;
+  --orange-dark: #6b5600;
+  --primary: #6b5600;
+  --ring: #101116;
 
   --container: 1240px;
   --gutter: clamp(18px, 5vw, 48px);
@@ -137,14 +137,21 @@ summary:focus-visible,
 .ds-badge[data-tone="warning"] { border-color: #e4c99c; background: #fff5e7; color: #7c4a08; }
 .ds-badge[data-tone="neutral"] { border-color: var(--line); background: var(--surface-100); color: #52635c; }
 
-.button,
-.quote-popup-submit {
+/* Solarious primary actions are gold with navy type (see solarious-ui.css).
+   The enquiry submit is a navy action with white type so it stays 17:1 even
+   when the theme tokens change. */
+.button {
   background: var(--orange);
   border-color: var(--orange);
-  color: #fff;
+  color: #ffffff;
 }
-.button:hover,
-.quote-popup-submit:hover { background: var(--orange-dark); border-color: var(--orange-dark); }
+.button:hover { background: var(--orange-dark); border-color: var(--orange-dark); }
+.quote-popup-submit {
+  background: #061b36;
+  border-color: #061b36;
+  color: #ffffff;
+}
+.quote-popup-submit:hover { background: #0b2c52; border-color: #0b2c52; }
 .button.button-ghost { background: #fff; border-color: var(--line-strong); color: var(--ink-800); }
 .button.button-ghost:hover { background: var(--surface-50); border-color: #9eaea5; color: var(--ink-800); }
 .premium-kicker { color: var(--solar-700); }

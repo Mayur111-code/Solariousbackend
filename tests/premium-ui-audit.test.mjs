@@ -124,7 +124,7 @@ test("WhatsApp uses the supplied international number and accessible external li
   assert.match(home, /WhatsAppLink/);
 });
 
-test("the existing hero carousel and Get Quote CTA are improved, not duplicated", async () => {
+test("the existing hero carousel and consultation CTA are improved, not duplicated", async () => {
   const [hero, home, premiumHome] = await Promise.all([
     read("components/hero-slider.tsx"),
     read("app/page.tsx"),
@@ -138,7 +138,7 @@ test("the existing hero carousel and Get Quote CTA are improved, not duplicated"
   assert.match(hero, /href="\/quote"/);
   assert.match(home, /premium-contact-cta/);
   assert.match(home, /href="\/quote">Full quote form/);
-  assert.match(home, /LeadFormModal label="Get a quote"/);
+  assert.match(home, /LeadFormModal label="Get a Free Consultation"/);
   assert.match(home, /premium-whatsapp-link/);
   assert.match(premiumHome, /utility-solar\.webp/);
   assert.match(premiumHome, /prefers-reduced-motion:reduce/);
