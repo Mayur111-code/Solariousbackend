@@ -36,9 +36,9 @@ import { getCertifications, getPerformanceMetrics } from "@/lib/certifications";
 export const dynamic = "force-dynamic";
 
 const pillars = [
-  { number: "01", title: "Premium Quality", text: "Disciplined inspection, dependable materials and traceable quality checks shape every module.", icon: ShieldCheck },
-  { number: "02", title: "Advanced Technology", text: "Modern cell architectures support project-specific performance and design priorities.", icon: Sparkles },
-  { number: "03", title: "Sustainable Progress", text: "Responsible manufacturing and durable solar solutions support a cleaner energy future.", icon: Leaf },
+  { title: "Premium Quality", text: "Disciplined inspection, dependable materials and traceable quality checks shape every module.", icon: ShieldCheck },
+  { title: "Advanced Technology", text: "Modern cell architectures support project-specific performance and design priorities.", icon: Sparkles },
+  { title: "Sustainable Progress", text: "Responsible manufacturing and durable solar solutions support a cleaner energy future.", icon: Leaf },
 ];
 
 const capabilities = [
@@ -127,14 +127,12 @@ export default async function Home() {
           <p className="future-kicker">The challenge</p>
           <h2 id="future-challenge-heading">Energy Shouldn&apos;t Be <em>Complicated.</em></h2>
           <p>Rising electricity costs, increasing energy demands, and environmental challenges make traditional energy solutions less sustainable.</p>
-          <span className="future-split-index" aria-hidden="true">01 / Challenge</span>
         </article>
         <div className="future-split-connector" aria-hidden="true"><i /></div>
         <article className="future-split-panel future-solution">
           <p className="future-kicker">Our solution</p>
           <h2>Beyond Solar. <em>Beyond Expectations.</em></h2>
           <p>Solarious Energy brings together modern solar technology, thoughtful system design, and professional installation to make clean energy more accessible.</p>
-          <span className="future-split-index" aria-hidden="true">02 / Solution</span>
         </article>
       </div>
     </section>
@@ -176,9 +174,8 @@ export default async function Home() {
         <p>Combining modern solar technology with intelligent system design to deliver dependable and efficient energy solutions.</p>
       </div>
       <div className="future-capability-grid" data-reveal-group>
-        {capabilities.map(({ title, text, icon: Icon }, index) => (
+        {capabilities.map(({ title, text, icon: Icon }) => (
           <article key={title} data-reveal-item>
-            <span className="future-capability-index">{String(index + 1).padStart(2, "0")}</span>
             <Icon size={24} aria-hidden="true" />
             <h3>{title}</h3>
             <p>{text}</p>
@@ -212,9 +209,8 @@ export default async function Home() {
         <p>Purposeful technology, disciplined quality and responsible thinking—brought together for demanding solar projects.</p>
       </div>
       <div className="future-pillar-grid" data-reveal-group>
-        {pillars.map(({ number, title, text, icon: Icon }) => (
-          <article key={number} data-reveal-item>
-            <span>{number}</span>
+        {pillars.map(({ title, text, icon: Icon }) => (
+          <article key={title} data-reveal-item>
             <Icon size={22} />
             <h3>{title}</h3>
             <p>{text}</p>
