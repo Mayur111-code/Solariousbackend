@@ -55,7 +55,9 @@ export default function ProductImageGallery({
 
   return (
     <div className="ps-gallery">
-      <figure className="ps-gallery-main">
+      <figure
+        className={`ps-gallery-main${sources.length > 1 ? " has-controls" : ""}`}
+      >
         <img
           src={srcAt(index)}
           alt={`${name} — image ${index + 1} of ${sources.length}`}

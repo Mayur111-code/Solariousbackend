@@ -417,13 +417,16 @@
   min-height: clamp(260px, 34vw, 420px);
   border-radius: var(--ps-radius-lg);
   overflow: hidden;
+  background: var(--ps-navy-800);
   box-shadow: var(--ps-shadow-lg);
 }
 
 .ps-hero-banner-media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+  padding: clamp(8px, 1.6vw, 18px);
 }
 
 .ps-hero-badge {
@@ -791,12 +794,14 @@
 .ps-card-media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s var(--ps-ease);
+  object-fit: contain;
+  object-position: center;
+  padding: clamp(8px, 2vw, 18px);
+  transition: filter 0.4s var(--ps-ease);
 }
 
 .ps-card:hover .ps-card-media img {
-  transform: scale(1.05);
+  filter: saturate(1.04);
 }
 
 .ps-card-category {
@@ -1122,10 +1127,6 @@
   box-shadow: var(--ps-shadow-lg);
 }
 
-.ps-hero-media .ps-gallery-main img {
-  height: clamp(260px, 30vw, 420px);
-}
-
 .ps-hero-media .ps-gallery-thumbs button {
   border-color: rgba(255, 255, 255, 0.2);
 }
@@ -1372,11 +1373,16 @@
   box-shadow: var(--ps-shadow);
 }
 
+/* Natural aspect ratio: no fixed height can crop a photograph. The small
+   minimum keeps very wide application shots from collapsing the card. */
 .ps-overview-media img {
   display: block;
   width: 100%;
-  height: clamp(240px, 30vw, 380px);
-  object-fit: cover;
+  height: auto;
+  min-height: clamp(180px, 20vw, 280px);
+  object-fit: contain;
+  object-position: center;
+  background: #fff;
 }
 
 /* Reveal wrappers must not add layout of their own. */
@@ -2439,18 +2445,29 @@
 
 .ps-gallery-main {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
+  padding: clamp(10px, 1.6vw, 16px);
   overflow: hidden;
   border-radius: var(--ps-radius-lg);
   border: 1px solid var(--ps-line);
   background: var(--ps-tint-deep);
 }
 
+/* Reserve room for the carousel controls so they never sit on top of the
+   product photograph. */
+.ps-gallery-main.has-controls {
+  padding-bottom: 64px;
+}
+
 .ps-gallery-main > img {
   display: block;
   width: 100%;
-  height: clamp(240px, 28vw, 400px);
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
 }
 
 .ps-gallery-expand {
@@ -2548,7 +2565,10 @@
 .ps-gallery-thumbs img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+  padding: 3px;
+  background: #fff;
 }
 
 .ps-lightbox {
@@ -2672,16 +2692,6 @@
   box-shadow: var(--ps-shadow-sm);
 }
 
-.ps-segment-index {
-  position: absolute;
-  top: 18px;
-  right: 20px;
-  font-size: 1.6rem;
-  font-weight: 750;
-  line-height: 1;
-  color: rgba(2, 103, 181, 0.16);
-}
-
 .ps-segment-grid svg {
   color: var(--ps-blue-600);
 }
@@ -2759,9 +2769,11 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
+  /* Keep the gallery beside the copy: a full-width, fixed-height frame turns
+     the contained product shot into a narrow letterboxed strip. */
   .ps-hero-media {
-    grid-column: 1 / -1;
-    order: -1;
+    grid-column: auto;
+    order: 0;
   }
 
   .ps-hero-cards {
@@ -2799,18 +2811,39 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* The banner stacks: photograph first, verification badge below it. The
+     badge used to sit on top of the product photograph and hide its corner. */
   .ps-hero-banner-media {
     order: -1;
+    min-height: 0;
+    aspect-ratio: auto;
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .ps-hero-banner-media img {
-    height: clamp(220px, 42vw, 340px);
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+    object-position: center;
+    padding: clamp(8px, 1.6vw, 18px);
+    background: var(--ps-navy-800);
+    border-radius: var(--ps-radius-lg);
+    box-shadow: var(--ps-shadow-lg);
   }
 
   .ps-hero-badge {
     position: static;
-    max-width: none;
-    margin-top: 14px;
+    max-width: min(100%, 440px);
+    margin-top: 0;
+    align-self: flex-start;
   }
 }
 
@@ -2820,8 +2853,18 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .ps-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ps-hero-media {
+    grid-column: auto;
+    order: 0;
+  }
+
   .ps-hero-cards {
     grid-template-columns: minmax(0, 1fr);
+    grid-column: auto;
   }
 }
 

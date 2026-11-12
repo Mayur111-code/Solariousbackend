@@ -257,11 +257,8 @@ export default function ProductListingView({
           </p>
         </div>
         <div className="ps-segment-grid">
-          {SEGMENTS.map((item, index) => (
+          {SEGMENTS.map((item) => (
             <article key={item.title}>
-              <span className="ps-segment-index" aria-hidden="true">
-                0{index + 1}
-              </span>
               <item.icon size={22} aria-hidden="true" />
               <h3>{item.title}</h3>
               <p>{item.text}</p>

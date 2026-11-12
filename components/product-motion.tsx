@@ -37,7 +37,13 @@ type RevealProps = {
   delay?: number;
   /** Travel distance in px; keep small so nothing feels bouncy. */
   y?: number;
-  amount?: number;
+  /**
+   * Intersection threshold. Defaults to "some" (any pixel visible) because
+   * percentage thresholds can never be met by sections taller than the
+   * viewport — the catalogue grid is several screens tall, and a 0.14
+   * threshold left the whole product grid stuck at opacity 0.
+   */
+  amount?: number | "some";
 };
 
 export function Reveal({
@@ -47,7 +53,7 @@ export function Reveal({
   id,
   delay = 0,
   y = 22,
-  amount = 0.14,
+  amount = "some",
 }: RevealProps) {
   const reduced = useReducedMotion();
   const Tag = reduced ? as : motionTag(as);

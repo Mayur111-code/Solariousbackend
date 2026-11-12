@@ -152,25 +152,6 @@ export default function HomeMotion({ children }: { children: ReactNode }) {
           );
         });
 
-        /* Product and editorial image scale ----------------------------- */
-        gsap.utils.toArray<HTMLElement>("[data-cinema]").forEach((frame) => {
-          const image = frame.querySelector<HTMLElement>("img");
-          if (!image) return;
-          gsap.fromTo(
-            image,
-            { scale: 1.16 },
-            {
-              scale: 1.01,
-              ease: "none",
-              scrollTrigger: {
-                trigger: frame,
-                start: "top bottom",
-                end: "bottom top",
-                scrub: 0.6,
-              },
-            },
-          );
-        });
       }, node);
 
       /* Pinned cinematic story — desktop only. -------------------------- */
