@@ -5,6 +5,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 
 const FALLBACK_IMAGE = "/utility-solar.webp";
@@ -22,6 +23,7 @@ export default function ProductImageGallery({
   const [failed, setFailed] = useState<Record<number, boolean>>({});
   const closeRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
 
   const move = useCallback(
     (direction: number) =>
@@ -47,7 +49,17 @@ export default function ProductImageGallery({
   }, [open, move]);
 
   useEffect(() => {
-    if (!open) openerRef.current?.focus({ preventScroll: true });
+    /* Restore focus only after the lightbox has actually closed. Running this
+       on mount used to steal focus into the gallery and paint a focus ring on
+       the Expand button before the visitor had interacted with anything. */
+    if (open) {
+      wasOpen.current = true;
+      return;
+    }
+    if (wasOpen.current) {
+      openerRef.current?.focus({ preventScroll: true });
+      wasOpen.current = false;
+    }
   }, [open]);
 
   const srcAt = (position: number) =>
@@ -55,9 +67,7 @@ export default function ProductImageGallery({
 
   return (
     <div className="ps-gallery">
-      <figure
-        className={`ps-gallery-main${sources.length > 1 ? " has-controls" : ""}`}
-      >
+      <figure className="ps-gallery-main">
         <img
           src={srcAt(index)}
           alt={`${name} — image ${index + 1} of ${sources.length}`}
@@ -107,55 +117,58 @@ export default function ProductImageGallery({
         </ul>
       ) : null}
 
-      {open ? (
-        <div
-          className="ps-lightbox"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${name} image gallery`}
-          onClick={(event) => {
-            if (event.target === event.currentTarget) setOpen(false);
-          }}
-        >
-          <button
-            type="button"
-            className="ps-lightbox-close"
-            onClick={() => setOpen(false)}
-            ref={closeRef}
-            aria-label="Close gallery"
-          >
-            <X size={20} aria-hidden="true" />
-          </button>
-          {sources.length > 1 ? (
-            <button
-              type="button"
-              className="ps-lightbox-nav is-prev"
-              onClick={() => move(-1)}
-              aria-label="Previous image"
+      {open
+        ? createPortal(
+            <div
+              className="ps-lightbox"
+              role="dialog"
+              aria-modal="true"
+              aria-label={`${name} image gallery`}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) setOpen(false);
+              }}
             >
-              <ChevronLeft size={22} aria-hidden="true" />
-            </button>
-          ) : null}
-            <img
-            className="ps-lightbox-image"
-            src={srcAt(index)}
-            alt={`${name} — enlarged image ${index + 1}`}
-          />
-          {sources.length > 1 ? (
-            <button
-              type="button"
-              className="ps-lightbox-nav is-next"
-              onClick={() => move(1)}
-              aria-label="Next image"
-            >
-              <ChevronRight size={22} aria-hidden="true" />
-            </button>
-          ) : null}
-          <p className="ps-lightbox-caption">
-            {name} · image {index + 1} of {sources.length}
-          </p>
-        </div>
-      ) : null}
+              <button
+                type="button"
+                className="ps-lightbox-close"
+                onClick={() => setOpen(false)}
+                ref={closeRef}
+                aria-label="Close gallery"
+              >
+                <X size={20} aria-hidden="true" />
+              </button>
+              {sources.length > 1 ? (
+                <button
+                  type="button"
+                  className="ps-lightbox-nav is-prev"
+                  onClick={() => move(-1)}
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft size={22} aria-hidden="true" />
+                </button>
+              ) : null}
+              <img
+                className="ps-lightbox-image"
+                src={srcAt(index)}
+                alt={`${name} — enlarged image ${index + 1}`}
+              />
+              {sources.length > 1 ? (
+                <button
+                  type="button"
+                  className="ps-lightbox-nav is-next"
+                  onClick={() => move(1)}
+                  aria-label="Next image"
+                >
+                  <ChevronRight size={22} aria-hidden="true" />
+                </button>
+              ) : null}
+              <p className="ps-lightbox-caption">
+                {name} · image {index + 1} of {sources.length}
+              </p>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

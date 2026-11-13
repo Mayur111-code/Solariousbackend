@@ -47,13 +47,20 @@ export default function ProductTabNav({ tabs }: { tabs: ProductTab[] }) {
     return () => observer.disconnect();
   }, [tabs]);
 
-  /* Keep the active chip visible inside the horizontally scrollable strip. */
+  /* Keep the active chip visible inside the horizontally scrollable strip.
+     Scrolling the strip directly (instead of scrollIntoView) is deliberate:
+     scrollIntoView also scrolls the document vertically on mount, which made
+     every product page open already scrolled down to the tab bar. */
   useEffect(() => {
-    const node = stripRef.current?.querySelector<HTMLElement>('[data-active="true"]');
-    if (!node) return;
-    node.scrollIntoView({
-      block: "nearest",
-      inline: "center",
+    const strip = stripRef.current;
+    const node = strip?.querySelector<HTMLElement>('[data-active="true"]');
+    if (!strip || !node) return;
+    const stripRect = strip.getBoundingClientRect();
+    const nodeRect = node.getBoundingClientRect();
+    const delta =
+      nodeRect.left - stripRect.left - (strip.clientWidth - nodeRect.width) / 2;
+    strip.scrollTo({
+      left: Math.max(0, strip.scrollLeft + delta),
       behavior: reduced ? "auto" : "smooth",
     });
   }, [active, reduced]);

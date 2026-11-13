@@ -410,33 +410,44 @@
   color: #fff;
 }
 
+/* The banner image and its verification badge are a single vertical stack at
+   every width. The badge used to float on top of the photograph, obscuring the
+   lower-left corner of the product image on desktop and mobile. */
 .ps-hero-banner-media {
   position: relative;
-  /* next/image `fill` absolutely positions the <img>, so the wrapper carries
-     the height and the radius. */
-  min-height: clamp(260px, 34vw, 420px);
-  border-radius: var(--ps-radius-lg);
-  overflow: hidden;
-  background: var(--ps-navy-800);
-  box-shadow: var(--ps-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
 }
 
 .ps-hero-banner-media img {
-  width: 100%;
-  height: 100%;
+  /* next/image `fill` ships inline absolute positioning; the image is taken
+     back into normal flow so its intrinsic ratio (not a fixed wrapper height)
+     decides the frame. */
+  position: static !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9;
   object-fit: contain;
   object-position: center;
   padding: clamp(8px, 1.6vw, 18px);
+  background: var(--ps-navy-800);
+  border-radius: var(--ps-radius-lg);
+  box-shadow: var(--ps-shadow-lg);
 }
 
 .ps-hero-badge {
-  position: absolute;
-  left: 18px;
-  bottom: 18px;
+  position: static;
   display: flex;
   align-items: flex-start;
+  align-self: flex-start;
   gap: 10px;
-  max-width: 268px;
+  max-width: min(100%, 440px);
   padding: 14px 16px;
   border-radius: var(--ps-radius);
   background: rgba(0, 23, 54, 0.72);
@@ -2449,17 +2460,13 @@
   align-items: center;
   justify-content: center;
   margin: 0;
-  padding: clamp(10px, 1.6vw, 16px);
+  /* The bottom strip belongs to the carousel + expand controls, so neither
+     control ever covers the product photograph. */
+  padding: clamp(10px, 1.6vw, 16px) clamp(10px, 1.6vw, 16px) 64px;
   overflow: hidden;
   border-radius: var(--ps-radius-lg);
   border: 1px solid var(--ps-line);
   background: var(--ps-tint-deep);
-}
-
-/* Reserve room for the carousel controls so they never sit on top of the
-   product photograph. */
-.ps-gallery-main.has-controls {
-  padding-bottom: 64px;
 }
 
 .ps-gallery-main > img {
@@ -2472,8 +2479,9 @@
 
 .ps-gallery-expand {
   position: absolute;
-  top: 14px;
+  top: auto;
   right: 14px;
+  bottom: 14px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -2802,8 +2810,7 @@
 
   .ps-overview,
   .ps-enquiry,
-  .ps-cert-band,
-  .ps-hero-banner {
+  .ps-cert-band {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -2811,46 +2818,22 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* The banner stacks: photograph first, verification badge below it. The
-     badge used to sit on top of the product photograph and hide its corner. */
-  .ps-hero-banner-media {
-    order: -1;
-    min-height: 0;
-    aspect-ratio: auto;
-    overflow: visible;
-    background: transparent;
-    box-shadow: none;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .ps-hero-banner-media img {
-    position: static !important;
-    inset: auto !important;
-    width: 100% !important;
-    height: auto !important;
-    aspect-ratio: 16 / 9;
-    object-fit: contain;
-    object-position: center;
-    padding: clamp(8px, 1.6vw, 18px);
-    background: var(--ps-navy-800);
-    border-radius: var(--ps-radius-lg);
-    box-shadow: var(--ps-shadow-lg);
-  }
-
-  .ps-hero-badge {
-    position: static;
-    max-width: min(100%, 440px);
-    margin-top: 0;
-    align-self: flex-start;
-  }
 }
 
 @media (max-width: 900px) {
   .ps-table-grid,
   .ps-document-list {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Keep the copy and photo side by side down to 900px (covers 1024x768
+     landscape tablets) and stack with the photograph first only below it. */
+  .ps-hero-banner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ps-hero-banner-media {
+    order: -1;
   }
 
   .ps-hero {
@@ -3010,5 +2993,23 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Framer Motion cannot run an entrance animation when the visitor asks for
+     reduced motion, so its initial opacity/transform would otherwise stay
+     applied and leave the hero and catalogue invisible. This is the CSS
+     guarantee that reduced-motion visitors always see the content. */
+  .ps-motion-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* If JavaScript is unavailable the entrance animation can never run, so the
+   server-rendered opacity:0 must be cancelled. */
+@media (scripting: none) {
+  .ps-motion-reveal {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

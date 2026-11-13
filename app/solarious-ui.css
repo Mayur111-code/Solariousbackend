@@ -5781,7 +5781,9 @@ button.button:hover {
 }
 
 .desktop-nav a:hover,
-.desktop-nav a.active,
+.desktop-nav a.active {
+  color: var(--navy-900);
+}
 .mobile-sheet nav > p {
   color: var(--gold-700);
 }
