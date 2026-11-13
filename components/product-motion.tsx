@@ -57,11 +57,12 @@ export function Reveal({
 }: RevealProps) {
   const reduced = useReducedMotion();
   const Tag = reduced ? as : motionTag(as);
+  const classes = ["ps-motion-reveal", className].filter(Boolean).join(" ");
 
   if (reduced) {
     const Plain = as as ElementType;
     return (
-      <Plain className={className} id={id}>
+      <Plain className={classes} id={id}>
         {children}
       </Plain>
     );
@@ -70,7 +71,7 @@ export function Reveal({
   const Motion = Tag as ElementType;
   return (
     <Motion
-      className={className}
+      className={classes}
       id={id}
       initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -98,10 +99,11 @@ export function HeroReveal({
   y?: number;
 }) {
   const reduced = useReducedMotion();
-  if (reduced) return <div className={className}>{children}</div>;
+  const classes = ["ps-motion-reveal", className].filter(Boolean).join(" ");
+  if (reduced) return <div className={classes}>{children}</div>;
   return (
     <motion.div
-      className={className}
+      className={classes}
       initial={{ opacity: 0, y }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...baseTransition, delay, duration: 0.7 }}
