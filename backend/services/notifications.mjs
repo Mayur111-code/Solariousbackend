@@ -23,9 +23,10 @@ export function smtpConfiguration() {
     host,
     port: Number.isInteger(port) && port > 0 && port < 65536 ? port : 587,
     user,
+    pass,
     configured: Boolean(host && user && pass),
     secure: clean(process.env.SMTP_SECURE).toLowerCase() === "true" || port === 465,
-    from: clean(process.env.SMTP_FROM) || clean(process.env.EMAIL_FROM) || "",
+    from: clean(process.env.SMTP_FROM) || clean(process.env.MAIL_FROM) || clean(process.env.EMAIL_FROM) || "",
     replyTo: clean(process.env.SMTP_REPLY_TO) || clean(process.env.RFQ_REPLY_TO),
   };
 }
@@ -33,7 +34,7 @@ export function smtpConfiguration() {
 export function rfqNotificationConfiguration() {
   const smtp = smtpConfiguration();
   const resendKey = clean(process.env.EMAIL_API_KEY);
-  const provider = smtp.configured ? "smtp" : resendKey && smtp.from ? "resend" : "none";
+  const provider = smtp.configured && smtp.from ? "smtp" : resendKey && smtp.from ? "resend" : "none";
   return {
     provider,
     configured: provider !== "none",
@@ -76,7 +77,7 @@ const failure = (message, code, status = 502) =>
 
 async function sendViaResend({ to, subject, html, text, replyTo, attachments }) {
   const apiKey = clean(process.env.EMAIL_API_KEY);
-  const from = clean(process.env.SMTP_FROM) || clean(process.env.EMAIL_FROM);
+  const from = clean(process.env.SMTP_FROM) || clean(process.env.MAIL_FROM) || clean(process.env.EMAIL_FROM);
   if (!apiKey || !from) throw failure("Email delivery is not configured.", "EMAIL_NOT_CONFIGURED", 503);
   let response;
   try {

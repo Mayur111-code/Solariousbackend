@@ -98,8 +98,11 @@ export default function QuotePopupForm({ variant = "compact" }: { variant?: Vari
     return (
       <div className="quote-popup-success" role="status">
         <CheckCircle2 aria-hidden="true" />
-        <h3>Thank you for your enquiry</h3>
-        <p>Your request has been saved. A Solarious specialist will contact you shortly.</p>
+        <h3>Quote request submitted</h3>
+        <p>
+          Thank you for your interest! Your quote request has been submitted successfully. Our sales
+          team will contact you shortly.
+        </p>
         <button type="button" onClick={() => setSent(false)}>
           Submit another enquiry
         </button>
