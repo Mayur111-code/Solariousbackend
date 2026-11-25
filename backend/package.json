@@ -7,7 +7,7 @@
     "node": ">=20 <23"
   },
   "scripts": {
-    "build": "node --check server.mjs && node --check db.mjs && node --check routes/procurement-routes.mjs && node --check services/rfq.mjs && node --check services/rfq-workflow.mjs && node --check services/certifications.mjs && node --check services/notifications.mjs && node --check scripts/migrate-local-mongodb-to-atlas.mjs && node --check scripts/migrate-production-cms.mjs && node --check scripts/smoke-test.mjs",
+    "build": "node --check server.mjs && node --check db.mjs && node --check routes/procurement-routes.mjs && node --check services/rfq.mjs && node --check services/rfq-workflow.mjs && node --check services/certifications.mjs && node --check services/notifications.mjs && node --check services/quote-inquiry.mjs && node --check scripts/migrate-local-mongodb-to-atlas.mjs && node --check scripts/migrate-production-cms.mjs && node --check scripts/smoke-test.mjs",
     "start": "node --env-file-if-exists=../.env.local --env-file-if-exists=.env server.mjs",
     "test": "node --test services/*.test.mjs routes/*.test.mjs",
     "test:smoke": "node --env-file-if-exists=.env scripts/smoke-test.mjs",

@@ -22,6 +22,9 @@ export default function ProductEnquiryForm({
   currentSlug: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
+  // Stable for the current form session: a timeout retry reuses the record the
+  // backend may already have saved instead of creating a second enquiry/email.
+  const submissionKey = useRef("");
   const [productSlug, setProductSlug] = useState(
     products.some((entry) => entry.slug === currentSlug) ? currentSlug : products[0]?.slug ?? "",
   );
@@ -40,6 +43,7 @@ export default function ProductEnquiryForm({
     if (String(data.get("website") ?? "")) return; // honeypot
     setState("sending");
     setError("");
+    if (!submissionKey.current) submissionKey.current = createKey();
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 20_000);
     try {
@@ -47,7 +51,7 @@ export default function ProductEnquiryForm({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Idempotency-Key": createKey(),
+          "Idempotency-Key": submissionKey.current,
         },
         body: JSON.stringify({
           kind: "quote",
@@ -71,6 +75,7 @@ export default function ProductEnquiryForm({
       if (!response.ok) throw new Error(payload.error || "The enquiry could not be submitted.");
       setState("sent");
       form.reset();
+      submissionKey.current = "";
     } catch (cause) {
       setError(
         cause instanceof Error && cause.name === "AbortError"
@@ -89,10 +94,10 @@ export default function ProductEnquiryForm({
     return (
       <div className="ps-form-success" role="status">
         <CheckCircle2 size={34} aria-hidden="true" />
-        <h3>Enquiry received</h3>
+        <h3>Quote request submitted</h3>
         <p>
-          Our team will confirm module availability, datasheet revision and commercial terms for
-          your project.
+          Thank you for your interest! Your quote request has been submitted successfully. Our sales
+          team will contact you shortly.
         </p>
         <button
           type="button"
